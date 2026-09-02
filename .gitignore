@@ -1,0 +1,98 @@
+##############################################################################
+# Laravel 13 — application baseline
+##############################################################################
+/.phpunit.cache
+/node_modules
+/public/build
+/public/fonts-manifest.dev.json
+/public/hot
+/public/storage
+/storage/pail
+/vendor
+
+.phpactor.json
+.phpunit.result.cache
+_ide_helper.php
+*.log
+
+Homestead.json
+Homestead.yaml
+
+##############################################################################
+# Environment files and local credentials
+##############################################################################
+.env
+.env.*
+!.env.example
+!.env.*.example
+/auth.json
+/storage/*.key
+
+##############################################################################
+# IDEs, editors, and operating-system metadata
+##############################################################################
+/.fleet/
+/.idea/
+/.nova/
+/.vscode/
+/.zed/
+
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+*:Zone.Identifier
+
+##############################################################################
+# AI coding agents — local configuration and runtime state
+##############################################################################
+
+# Anthropic — Claude Code
+/.claude/
+
+# OpenAI — Codex / ChatGPT agents
+/.agents/
+/.codex/
+
+# Cursor
+/.cursor/
+.cursorignore
+.cursorrules
+
+# Windsurf / Codeium
+.windsurfrules
+/.codeium/
+
+# GitHub Copilot
+.copilot-instructions.md
+
+# Aider
+.aider*
+
+# Continue.dev
+/.continue/
+
+# Tabnine
+/.tabnine/
+
+# Amazon Q / CodeWhisperer
+/.amazonq/
+
+# Devin
+/.devin/
+
+##############################################################################
+# Build and packaging output
+##############################################################################
+/.build-staging/
+/dist/
+/tmp/
+
+##############################################################################
+# Local project, SDD, and indexing state
+##############################################################################
+/.atl/
+/.codegraph/
+/.gentle-ai/
+/.git-local/
+/openspec/

@@ -1,0 +1,66 @@
+name: Work item
+description: Define one traceable, reviewable delivery outcome.
+body:
+  - type: markdown
+    attributes:
+      value: Start the issue title with its primary requirement ID, for example `[REQ-HOM-001] Present the product home page`.
+  - type: input
+    id: requirement-ids
+    attributes:
+      label: Requirement IDs
+      description: List the authoritative requirement IDs. Do not copy the full requirements.
+      placeholder: REQ-HOM-001
+    validations:
+      required: true
+  - type: dropdown
+    id: wave
+    attributes:
+      label: Wave
+      description: Select the delivery wave that controls dependency order.
+      options:
+        - Wave 0
+        - Wave 1
+        - Wave 2
+        - Wave 3
+        - Wave 4
+        - Wave 5
+        - Wave 6
+        - Wave 7
+        - Wave 8
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: State the observable user or system outcome.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: State what is included and explicitly excluded.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: List upstream items, external access, and decisions, or write `None`.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-evidence
+    attributes:
+      label: Acceptance evidence
+      description: State the acceptance examples, rejection paths, and verification evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: cross-cutting-requirements
+    attributes:
+      label: Cross-cutting requirements
+      description: List applicable security, accessibility, performance, reliability, and maintainability requirement IDs, or write `None`.
+    validations:
+      required: true
