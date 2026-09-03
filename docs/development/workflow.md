@@ -50,6 +50,10 @@ Each item contains only the information required to implement and verify one out
 
 Do not copy full requirements or architecture sections into the item. Link to the authoritative source.
 
+Use an outcome-oriented title with at most one primary requirement ID, such as `[REQ-HOM-001] Present the product home page`. Never concatenate several requirement IDs in a title. Record the primary, related, and cross-cutting requirement IDs in the item body so the title remains readable. Maintenance and documentation items that do not implement an authoritative requirement do not need a fabricated requirement prefix.
+
+A draft must become a repository issue before it enters `Active`. The issue is the durable unit linked to its branch, pull request, checks, and resulting commit.
+
 ## Definition of Ready
 
 An item is ready when:
@@ -73,6 +77,14 @@ An item is done when:
 - observability is sufficient for the changed operation;
 - owning documentation is updated;
 - the deployed or staging flow is verified when the change affects integration.
+
+Delivery evidence depends on the type of change:
+
+- Versioned work links the pull request and the resulting commit on `main`.
+- The one-time repository baseline exception links its direct initial commit.
+- GitHub configuration that does not exist in Git history links the stable Project, ruleset, or settings resource and records the verification date.
+
+The two Done drafts created before the issue-first gate remain historical drafts with explicit evidence. They are not precedent for bypassing the repository issue, pull-request, or protected-branch workflow.
 
 ## Initial delivery slices
 
