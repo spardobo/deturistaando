@@ -1,0 +1,102 @@
+name: Pull request policy
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+concurrency:
+  group: pr-policy-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Validate pull request policy
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const pullRequest = context.payload.pull_request;
+            const branch = pullRequest.head.ref;
+            const branchPattern = /^(feat|fix|chore|docs|style|refactor|perf|test|build|ci|revert)\/[a-z0-9._-]+$/;
+            const dependabotPattern = /^dependabot\/[a-z0-9._/-]+$/;
+
+            if (!branchPattern.test(branch) && !dependabotPattern.test(branch)) {
+              core.setFailed(`Branch "${branch}" does not follow the documented naming convention.`);
+              return;
+            }
+
+            const typeLabels = pullRequest.labels
+              .map((label) => label.name)
+              .filter((name) => name.startsWith('type:'));
+
+            if (typeLabels.length !== 1) {
+              core.setFailed(`Expected exactly one type:* label; found ${typeLabels.length}.`);
+              return;
+            }
+
+            const isDependabot = pullRequest.user.login === 'dependabot[bot]'
+              && dependabotPattern.test(branch);
+
+            if (isDependabot) {
+              if (typeLabels[0] !== 'type:chore') {
+                core.setFailed('Dependabot pull requests must have exactly the type:chore label.');
+                return;
+              }
+
+              core.info('Dependabot maintenance policy passed with label type:chore.');
+              return;
+            }
+
+            const body = pullRequest.body || '';
+            const closingPattern = /\b(?:closes|fixes|resolves)\s+#(\d+)\b/gi;
+            const issueNumbers = [...body.matchAll(closingPattern)]
+              .map((match) => Number(match[1]));
+
+            if (issueNumbers.length === 0) {
+              core.setFailed('The pull request body must contain Closes, Fixes, or Resolves followed by #N.');
+              return;
+            }
+
+            const uniqueIssueNumbers = [...new Set(issueNumbers)];
+            let approvedIssue = null;
+
+            for (const issueNumber of uniqueIssueNumbers) {
+              try {
+                const { data: issue } = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                });
+
+                const isIssue = !issue.pull_request;
+                const isApproved = issue.labels.some((label) => {
+                  const name = typeof label === 'string' ? label : label.name;
+                  return name === 'status:approved';
+                });
+
+                if (isIssue && isApproved) {
+                  approvedIssue = issueNumber;
+                  break;
+                }
+              } catch (error) {
+                if (error.status !== 404) {
+                  throw error;
+                }
+              }
+            }
+
+            if (approvedIssue === null) {
+              core.setFailed('At least one referenced issue must exist in this repository and have status:approved.');
+              return;
+            }
+
+            core.info(`Policy passed with approved issue #${approvedIssue} and label ${typeLabels[0]}.`);

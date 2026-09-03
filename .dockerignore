@@ -2,7 +2,6 @@
 # Version-control and repository metadata
 ##############################################################################
 .git/
-.git-local/
 .github/
 .gitattributes
 .gitignore
@@ -89,6 +88,7 @@ tmp/
 docs/
 tests/
 *.md
+LICENSE*
 
 ##############################################################################
 # Docker, Compose, CI, and packaging metadata

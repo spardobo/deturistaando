@@ -95,6 +95,18 @@ The Wallet spike occurs before broad feature work because provider approval and 
 
 Laravel Sail is mandatory for development. Docker is the only required host dependency; PHP, Composer, Node, PostgreSQL, and the local mail service run in containers. Add another local dependency to the Sail topology instead of making it a host prerequisite.
 
+On a fresh clone, create the local environment file and install Composer dependencies through Docker before invoking Sail:
+
+```bash
+cp .env.example .env
+docker run --rm \
+    --user "$(id -u):$(id -g)" \
+    --volume "$(pwd):/app" \
+    --workdir /app \
+    composer:2 composer install --no-interaction
+./vendor/bin/sail artisan key:generate
+```
+
 Use the repository-local Sail executable for application commands:
 
 ```bash
@@ -105,13 +117,17 @@ Use the repository-local Sail executable for application commands:
 ./vendor/bin/sail test
 ```
 
+Run `./vendor/bin/sail npm install` once after cloning to install frontend dependencies and activate the versioned Husky hooks. Keep Sail running while committing and pushing because both hooks execute their checks inside the application container.
+
+The baseline Sail topology exposes the application at `http://localhost:8000`, PostgreSQL on port `5432`, and the Mailpit inbox at `http://localhost:8025`. Google OAuth credentials remain empty in `.env.example`; local values belong only in the ignored `.env` file. The redirect contract is `${APP_URL}/auth/google/callback`, while the route and account-linking flow remain part of the organizer-authentication slice.
+
 Formatting, static analysis, frontend checks, and Playwright also run through Sail. Production uses the independent `Dockerfile` at the repository root; it does not reuse the Sail development image. See [ADR-005](../architecture/decisions/005-sail-development-and-production-container.md).
 
 ## Git and pull requests
 
 - Use GitHub Flow: branch from `main`, open a pull request, pass the required checks, merge, and delete the branch.
 - Protect `main`; keep it releasable.
-- Use short-lived branches such as `feat/experience-publication` or `fix/redemption-idempotency`.
+- Use one of these branch prefixes: `feat/`, `fix/`, `chore/`, `docs/`, `style/`, `refactor/`, `perf/`, `test/`, `build/`, `ci/`, or `revert/`. The suffix uses lowercase letters, digits, dots, underscores, or hyphens. Dependabot's generated `dependabot/` branches are also valid.
 - Use Conventional Commits with a short subject and useful body when rationale is not obvious.
 - Keep one outcome per pull request.
 - Rebase or update before merge and prefer squash merge for a focused history.
@@ -119,7 +135,19 @@ Formatting, static analysis, frontend checks, and Playwright also run through Sa
 
 The repository baseline is established by one non-empty root commit before branch protection. It is the only direct-to-`main` exception; every later change follows GitHub Flow.
 
-The pull-request description states outcome, requirement IDs, risk, evidence, screenshots for UI changes, and follow-up work that is explicitly excluded.
+The pull-request description states outcome, requirement IDs, risk, evidence, screenshots for UI changes, and follow-up work that is explicitly excluded. It must include `Closes #N`, `Fixes #N`, or `Resolves #N` for at least one repository issue labeled `status:approved`. Apply exactly one `type:*` label to the pull request.
+
+Dependabot maintenance is the only operational exception to issue linkage: a pull request authored by `dependabot[bot]` from a matching `dependabot/` branch may omit the closing reference and approved issue, but must carry exactly the `type:chore` label. Human pull requests and every other bot remain subject to the full policy.
+
+Local quality gates increase in cost without replacing CI:
+
+1. During development, run the smallest focused test that proves the behavior being changed.
+2. Pre-commit runs Pint, Larastan, and the Unit suite with a target budget of 90 seconds.
+3. Pre-push creates the frontend production build before running all current PHP quality checks and tests, with a target budget of three minutes.
+4. Pull-request CI repeats the complete required baseline in a disposable environment with PostgreSQL.
+5. Coverage and critical Chromium browser tests enter pre-push and CI only after owned domain rules and complete browser journeys exist.
+
+If a local gate repeatedly exceeds its budget, move the expensive portion to CI instead of normalizing `--no-verify`.
 
 ## AI-assisted development
 
@@ -134,13 +162,21 @@ GentleAI and coding agents can analyze, implement, test, and review. They do not
 
 ## CI/CD flow
 
-1. The pull request runs the checks in the [quality strategy](../quality-strategy.md).
+The current automation baseline uses a disposable GitHub-hosted runner with PHP 8.4, Composer 2, Node.js 24, and an ephemeral PostgreSQL 16 Alpine service. It installs Composer and npm dependencies from their committed lock files, runs the PHP quality and test suite, builds frontend assets, validates pull-request policy, and schedules weekly Dependabot updates. Local development remains Sail-based; CI does not start Sail or Mailpit.
+
+GitHub Copilot Code Review and the Copilot coding agent are not part of Copilot Free, so neither is configured. Human acceptance and deterministic CI remain authoritative.
+
+The delivery target is:
+
+1. The pull request runs the checks currently available in the [quality strategy](../quality-strategy.md).
 2. Merge creates one versioned deployable image.
 3. The same image is promoted to staging.
 4. Staging runs migration, health, and critical-flow smoke tests.
 5. Production deployment uses the verified image and environment configuration.
 6. The release verifies health, queue state, migration, and the main experience flow.
 7. A failed verification triggers rollback or the documented recovery path.
+
+Playwright browser gates and the production-image build remain deferred until their dedicated Wave 0 items provide the browser harness and root `Dockerfile`.
 
 Use GitHub Actions and GitHub Projects when available. Do not add a separate project-management platform for MVP01.
 
