@@ -22,8 +22,10 @@ services:
         networks:
             - sail
         depends_on:
-            - pgsql
-            - mailpit
+            pgsql:
+                condition: service_healthy
+            mailpit:
+                condition: service_started
     pgsql:
         image: 'postgres:16-alpine'
         ports:
@@ -47,7 +49,9 @@ services:
                 - '${DB_DATABASE}'
                 - '-U'
                 - '${DB_USERNAME}'
-            retries: 3
+            interval: 5s
+            retries: 5
+            start_period: 10s
             timeout: 5s
     mailpit:
         image: 'axllent/mailpit:latest'

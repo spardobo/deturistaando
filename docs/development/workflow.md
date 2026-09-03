@@ -133,6 +133,17 @@ Run `./vendor/bin/sail npm install` once after cloning to install frontend depen
 
 The baseline Sail topology exposes the application at `http://localhost:8000`, PostgreSQL on port `5432`, and the Mailpit inbox at `http://localhost:8025`. Google OAuth credentials remain empty in `.env.example`; local values belong only in the ignored `.env` file. The redirect contract is `${APP_URL}/auth/google/callback`, while the route and account-linking flow remain part of the organizer-authentication slice.
 
+PostgreSQL 16 is the required database for development and automated tests. After starting Sail, reset only the disposable local database and verify the integration with:
+
+```bash
+./vendor/bin/sail up -d
+./vendor/bin/sail artisan migrate:fresh
+./vendor/bin/sail test tests/Feature/PostgreSQLConfigurationTest.php
+./vendor/bin/sail test
+```
+
+`migrate:fresh` drops all tables in the selected database. Never run this local reset command against staging or production.
+
 Formatting, static analysis, frontend checks, and Playwright also run through Sail. Production uses the independent `Dockerfile` at the repository root; it does not reuse the Sail development image. See [ADR-005](../architecture/decisions/005-sail-development-and-production-container.md).
 
 ## Git and pull requests
