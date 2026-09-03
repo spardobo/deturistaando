@@ -233,4 +233,4 @@ El [estándar de documentación](docs/documentation-standard.md) define autorida
 
 ## Licencia
 
-La licencia está pendiente de definición. El acceso gratuito a MVP01 no determina los permisos de uso o distribución del código.
+Este proyecto es software propietario con código fuente disponible para transparencia, revisión técnica y evaluación profesional. No es software de código abierto y su disponibilidad pública no concede permisos de uso, modificación, distribución ni explotación. Consultá los términos completos en [LICENSE](LICENSE).
