@@ -68,11 +68,26 @@
         "types:check": [
             "phpstan analyse"
         ],
+        "test:unit": [
+            "@php artisan test --testsuite=Unit"
+        ],
+        "test:feature": [
+            "@php artisan test --testsuite=Feature"
+        ],
+        "test:all": [
+            "@php artisan test"
+        ],
+        "quality:quick": [
+            "@php artisan config:clear --ansi",
+            "@lint:check",
+            "@types:check",
+            "@test:unit"
+        ],
         "test": [
             "@php artisan config:clear --ansi",
             "@lint:check",
             "@types:check",
-            "@php artisan test"
+            "@test:all"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

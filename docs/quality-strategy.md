@@ -90,10 +90,14 @@ All executable local quality checks run inside the Sail environment. The host re
 
 | Gate | Budget | Checks |
 |---|---:|---|
-| Pre-commit | Target `≤ 90 s` | Formatting and changed-file static checks. |
-| Pre-push | Target `≤ 3 min` | Relevant tests and build checks. |
+| Pre-commit | Target `≤ 90 s` | Pint, Larastan, and the Unit suite. |
+| Pre-push | Target `≤ 3 min` | Frontend production build followed by Pint, Larastan, and all current PHP tests. |
 
 If a gate exceeds its budget consistently, move expensive checks to CI instead of encouraging bypass.
+
+Husky versions both hooks in `.husky/`. The hooks invoke repository-owned Composer scripts through Sail, fail closed when a check fails, and remain convenience gates rather than merge authority. Keep Sail running before committing or pushing. `--no-verify` is reserved for an exceptional recovery; the pull-request CI still repeats every required check independently.
+
+The initial scripts expose `test:unit`, `test:feature`, and `test:all` separately. Coverage runs join pre-push and CI after the first owned domain rules exist. Critical Chromium Playwright runs join those gates after the first complete browser journey exists. Do not introduce placeholder thresholds or browser tests for generated starter-kit code.
 
 Recommended local tools:
 
@@ -107,19 +111,30 @@ Recommended local tools:
 
 ## Continuous integration
 
-A pull request must pass:
+The current GitHub Actions baseline runs on pull requests targeting `main` and on pushes to `main`. CI uses a disposable `ubuntu-latest` runner with PHP 8.4, Composer 2, Node.js 24, and an ephemeral PostgreSQL 16 Alpine service. It installs dependencies exclusively from `composer.lock` and `package-lock.json`, runs `npm ci` and the frontend production build before rendering Feature-test views, and then runs Pint, Larastan, and PHPUnit. Local development continues to use Sail; the hosted CI runner is an isolated verification environment, not a replacement for the local runtime contract.
 
-1. Dependency installation from lock files in containers.
-2. Laravel Pint and frontend formatting or lint checks through Sail.
-3. Larastan static analysis through Sail.
-4. Unit, feature, integration, and architecture tests through Sail with PostgreSQL 16.
-5. The npm frontend production build through Sail.
+The current automated gates are:
+
+- Pull-request policy: branch naming, a `Closes`, `Fixes`, or `Resolves #N` reference to at least one `status:approved` issue, and exactly one `type:*` label.
+- Weekly Dependabot checks for Composer, npm, and GitHub Actions.
+
+The complete target gate remains:
+
+1. Dependency installation from committed lock files.
+2. Laravel Pint and frontend formatting or lint checks.
+3. Larastan static analysis.
+4. Unit, feature, integration, and architecture tests with PostgreSQL 16.
+5. The npm frontend production build.
 6. Critical Playwright tests and selected stable visual snapshots in containers.
 7. Dependency and secret scans.
 8. Production-image build from the root `Dockerfile`, plus a vulnerability scan when deployment files change.
 9. Documentation link and identifier checks.
 
-Use parallel jobs where independence reduces feedback time. CI must verify the independent production build even though quality checks use the Sail development topology. Build the deployable image once and promote the same artifact.
+Critical Playwright coverage, stable visual snapshots, the independent production `Dockerfile` build, container scanning, and the full documentation checker remain deferred until their runtime or artifact exists. Do not present those target gates as current evidence.
+
+Coverage measurement is also deferred until owned domain behavior exists. Its first implementation must exclude generated and infrastructure-only code, report the Core and Important tiers separately where tooling permits, and preserve the `100/80/0` risk interpretation rather than impose one repository-wide percentage.
+
+Use parallel jobs where independence reduces feedback time. When the production image lands, CI must verify that independent build. Build the deployable image once and promote the same artifact.
 
 ## Review gate
 
@@ -141,6 +156,8 @@ Review focuses on:
 Apply the minimum gate in the [security architecture](architecture/security.md): authorization and concurrency tests, dependency audit, secret scan, production configuration check, container scan, and focused manual review.
 
 Use OWASP guidance to review applicable risks before public release. Do not add a large security platform when Laravel configuration, tests, and lightweight scanners cover the current risk.
+
+GitHub Copilot Code Review and the Copilot coding agent are not included in Copilot Free and are not configured as repository gates. Reconsider them only if a paid plan or explicit organization entitlement changes that constraint.
 
 ## Accessibility and visual quality
 
