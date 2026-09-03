@@ -3,12 +3,12 @@ description: Define one traceable, reviewable delivery outcome.
 body:
   - type: markdown
     attributes:
-      value: Start the issue title with its primary requirement ID, for example `[REQ-HOM-001] Present the product home page`.
+      value: Use an outcome-oriented title with at most one primary requirement ID, for example `[REQ-HOM-001] Present the product home page`. Keep every related requirement ID in the issue body, never in the title.
   - type: input
     id: requirement-ids
     attributes:
       label: Requirement IDs
-      description: List the authoritative requirement IDs. Do not copy the full requirements.
+      description: List the primary and related authoritative requirement IDs. Do not copy the full requirements or repeat every ID in the title.
       placeholder: REQ-HOM-001
     validations:
       required: true
