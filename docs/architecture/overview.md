@@ -165,7 +165,9 @@ Queue work can start with the database driver. Introduce Redis only after measur
 
 ### Development runtime
 
-Laravel Sail is the mandatory local runtime. Its container topology includes the application, PostgreSQL, mail, and every dependency required to develop or verify the application. Developers run Artisan, Composer, npm, tests, formatting, static analysis, and browser tests through Sail. Docker is the only required host dependency.
+Laravel Sail is the mandatory local runtime. Docker Desktop groups the stack as `deturistaando`, with the project-prefixed services `deturistaando-laravel-app`, `deturistaando-postgres-db`, and `deturistaando-mailpit-dev`. The application image is `sail-deturistaando:dev`. Developers run Artisan, Composer, npm, tests, formatting, static analysis, and browser tests through Sail. Docker is the only required host dependency.
+
+Developers copy the versioned `.env.dev.example` contract to the ignored `.env`. Production deployments use `.env.example` as a separate template and inject all secrets through the runtime environment; no `.env.dev` file exists.
 
 The Wave 0 application baseline installs Socialite and defines the Google OAuth environment contract without committing credentials. The organizer login callback and safe identity-linking workflow remain part of the Wave 3 Organizer Identity slice.
 

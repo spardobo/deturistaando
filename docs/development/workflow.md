@@ -110,7 +110,7 @@ Laravel Sail is mandatory for development. Docker is the only required host depe
 On a fresh clone, create the local environment file and install Composer dependencies through Docker before invoking Sail:
 
 ```bash
-cp .env.example .env
+cp .env.dev.example .env
 docker run --rm \
     --user "$(id -u):$(id -g)" \
     --volume "$(pwd):/app" \
@@ -118,6 +118,8 @@ docker run --rm \
     composer:2 composer install --no-interaction
 ./vendor/bin/sail artisan key:generate
 ```
+
+`.env.dev.example` is the versioned, mostly populated contract for disposable local development and is copied to the ignored `.env`. There is no `.env.dev` file. `.env.example` is the production deployment template; operators must provide its blank credentials and secrets through the target environment.
 
 Use the repository-local Sail executable for application commands:
 
@@ -129,9 +131,11 @@ Use the repository-local Sail executable for application commands:
 ./vendor/bin/sail test
 ```
 
-Run `./vendor/bin/sail npm install` once after cloning to install frontend dependencies and activate the versioned Husky hooks. Keep Sail running while committing and pushing because both hooks execute their checks inside the application container.
+Run `./vendor/bin/sail npm ci` once after cloning to install frontend dependencies from the lock file and activate the versioned Husky hooks. Keep Sail running while committing and pushing because both hooks execute their checks inside the application container.
 
-The baseline Sail topology exposes the application at `http://localhost:8000`, PostgreSQL on port `5432`, and the Mailpit inbox at `http://localhost:8025`. Google OAuth credentials remain empty in `.env.example`; local values belong only in the ignored `.env` file. The redirect contract is `${APP_URL}/auth/google/callback`, while the route and account-linking flow remain part of the organizer-authentication slice.
+Docker Desktop groups the development stack as `deturistaando`. It contains `deturistaando-laravel-app`, `deturistaando-postgres-db`, and `deturistaando-mailpit-dev`; the application image is `sail-deturistaando:dev`. The stack exposes the application at `http://localhost:8000`, PostgreSQL on port `5432`, and the Mailpit inbox at `http://localhost:8025`.
+
+Google OAuth credentials remain empty in both versioned templates. Local values belong only in the ignored `.env`; production secrets belong in the deployment environment. The redirect contract is `${APP_URL}/auth/google/callback`, while the route and account-linking flow remain part of the organizer-authentication slice.
 
 PostgreSQL 16 is the required database for development and automated tests. After starting Sail, reset only the disposable local database and verify the integration with:
 
