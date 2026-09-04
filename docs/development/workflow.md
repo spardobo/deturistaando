@@ -178,7 +178,7 @@ The fixed key is disposable smoke-test data and must never be used for a deploym
 
 The repository baseline is established by one non-empty root commit before branch protection. It is the only direct-to-`main` exception; every later change follows GitHub Flow.
 
-The pull-request description states outcome, requirement IDs, risk, evidence, screenshots for UI changes, and follow-up work that is explicitly excluded. It must include `Closes #N`, `Fixes #N`, or `Resolves #N` for at least one repository issue labeled `status:approved`. Apply exactly one `type:*` label to the pull request.
+The pull-request description states outcome, requirement IDs, risk, evidence, screenshots for UI changes, and follow-up work that is explicitly excluded. Every human pull request must reference at least one repository issue labeled `status:approved`. A final pull request uses `Closes #N`, `Fixes #N`, or `Resolves #N`; an intermediate pull request in a documented chain uses `Refs #N`, `References #N`, or `Part of #N`. Only the final pull request closes the shared issue. Apply exactly one `type:*` label to the pull request.
 
 Dependabot maintenance is the only operational exception to issue linkage: a pull request authored by `dependabot[bot]` from a matching `dependabot/` branch may omit the closing reference and approved issue, but must carry exactly the `type:chore` label. Human pull requests and every other bot remain subject to the full policy.
 
