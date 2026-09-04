@@ -130,11 +130,11 @@ The complete target gate remains:
 8. Production-image build from the root `Dockerfile`, plus a vulnerability scan when deployment files change.
 9. Documentation link and identifier checks.
 
-Critical Playwright coverage, stable visual snapshots, the independent production `Dockerfile` build, container scanning, and the full documentation checker remain deferred until their runtime or artifact exists. Do not present those target gates as current evidence.
+Critical Playwright coverage, stable visual snapshots, container scanning, the GitHub Actions production-image build, and the full documentation checker remain deferred until their dedicated items provide the required automation. The independent production `Dockerfile` is available for local build and smoke evidence, but it is not yet a repository gate. Do not present target gates as current evidence.
 
 Coverage measurement is also deferred until owned domain behavior exists. Its first implementation must exclude generated and infrastructure-only code, report the Core and Important tiers separately where tooling permits, and preserve the `100/80/0` risk interpretation rather than impose one repository-wide percentage.
 
-Use parallel jobs where independence reduces feedback time. When the production image lands, CI must verify that independent build. Build the deployable image once and promote the same artifact.
+Use parallel jobs where independence reduces feedback time. The dedicated CI delivery item must verify the independent production build. Build the deployable image once and promote the same artifact.
 
 ## Review gate
 

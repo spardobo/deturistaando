@@ -5,6 +5,7 @@
 .github/
 .gitattributes
 .gitignore
+.husky/
 
 ##############################################################################
 # IDEs, editors, and local AI-agent state
@@ -89,6 +90,9 @@ docs/
 tests/
 *.md
 LICENSE*
+phpstan.neon
+phpunit.xml
+pint.json
 
 ##############################################################################
 # Docker, Compose, CI, and packaging metadata

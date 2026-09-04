@@ -211,7 +211,7 @@ Las [guías UI/UX](docs/ui-ux-guidelines.md) definen la dirección visual sin co
 
 El starter kit aporta autenticación, recuperación de acceso, verificación de correo, layouts, dashboard, componentes Flux y workflows iniciales. Socialite incorpora el acceso con Google sin delegar la autorización del producto.
 
-Docker es la única dependencia obligatoria del host para desarrollar. Los comandos de PHP, Composer, Node y pruebas se ejecutan mediante Sail. Producción no reutiliza Sail: se construye desde el Dockerfile de la raíz y CI verifica esa imagen antes de promoverla.
+Docker es la única dependencia obligatoria del host para desarrollar. Los comandos de PHP, Composer, Node y pruebas se ejecutan mediante Sail. Producción no reutiliza Sail: se construye desde el Dockerfile de la raíz y el item dedicado de CI deberá verificar esa imagen antes de promoverla.
 
 La aplicación será un **monolito modular con arquitectura hexagonal**. Cada módulo separará dominio, casos de uso y adaptadores. DRY, KISS, YAGNI y SOLID se aplicarán donde reduzcan repetición, complejidad o acoplamiento; no como una obligación de crear capas o interfaces. Los patrones Service y Repository se usarán cuando exista una operación de negocio o una frontera de persistencia que los justifique.
 

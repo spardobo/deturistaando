@@ -184,9 +184,11 @@ Production uses an independent `Dockerfile` at the repository root rather than t
 
 The selected free-tier provider must support the visit flow reliably, background work, database backups, and required credentials. Provider selection requires a technical spike before it becomes an ADR.
 
-The production image uses pinned supported versions, a non-root process where the base image permits it, a health check, and no development dependencies or embedded secrets.
+The production image pins PHP 8.4, Composer 2, and Node.js 24 build stages by version and digest. Its final Alpine runtime pins nginx and Supervisor, runs as `www-data`, serves the `/up` health check on port `8080`, writes logs to standard streams, and contains neither build tools nor embedded environment files. Transitive Alpine libraries remain within the pinned Alpine release so compatible security patches are not blocked. Laravel is optimized at container startup, but migrations remain an explicit deployment operation.
 
-CI runs tests and quality checks in containers and must build the root production `Dockerfile` successfully. See [ADR-005](decisions/005-sail-development-and-production-container.md).
+The runtime baseline targets medium traffic: nginx limits request bodies to 10 MB, compresses and caches only versioned Vite assets, and sends requests exclusively through `public/index.php`; PHP-FPM recycles workers and caps long requests. An explicit hash-aware location routes Livewire 4 endpoints to Laravel instead of treating them as static files, while Flux continues through the same front-controller fallback. Livewire and Flux control the cache headers for their own versioned scripts; interactive update and upload endpoints remain dynamic. Nginx reaches PHP-FPM through a private Unix socket owned by `www-data`, avoiding a same-container TCP listener without retaining idle FastCGI connections. Dedicated Nginx buffering directories are created for and owned by the rootless runtime user so disk spill remains available under sustained load. Baseline OWASP response headers are emitted by nginx while `.well-known` remains available for passkeys. TLS and HSTS belong to the deployment edge, where HTTPS is actually terminated. These capacity values are starting points and must be adjusted from production measurements rather than treated as universal limits.
+
+CI runs tests and quality checks in containers. Wiring the root production `Dockerfile` build and scan into GitHub Actions remains part of the dedicated CI delivery item. See [ADR-005](decisions/005-sail-development-and-production-container.md).
 
 ## Environments and observability
 
