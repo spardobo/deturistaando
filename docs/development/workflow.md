@@ -150,6 +150,22 @@ PostgreSQL 16 is the required database for development and automated tests. Afte
 
 Formatting, static analysis, frontend checks, and Playwright also run through Sail. Production uses the independent `Dockerfile` at the repository root; it does not reuse the Sail development image. See [ADR-005](../architecture/decisions/005-sail-development-and-production-container.md).
 
+Build and smoke-test the production image independently:
+
+```bash
+docker build --tag deturistaando:local .
+docker run --detach --rm \
+    --name deturistaando-production-smoke \
+    --publish 8080:8080 \
+    --env-file .env.example \
+    --env 'APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=' \
+    deturistaando:local
+curl --fail http://localhost:8080/up
+docker stop deturistaando-production-smoke
+```
+
+The fixed key is disposable smoke-test data and must never be used for a deployment. The image runs its web processes as `www-data`, writes logs to standard streams, optimizes Laravel at startup, and never runs migrations automatically. Its direct base images are fixed by version and digest; nginx and Supervisor are fixed to revisions compatible with Alpine 3.24. Production supplies managed PostgreSQL and real secrets outside the image. TLS and HSTS are configured at the deployment edge, not inside the HTTP-only application container. Wiring this build into GitHub Actions remains part of the dedicated CI delivery item.
+
 ## Git and pull requests
 
 - Use GitHub Flow: branch from `main`, open a pull request, pass the required checks, merge, and delete the branch.
@@ -203,7 +219,7 @@ The delivery target is:
 6. The release verifies health, queue state, migration, and the main experience flow.
 7. A failed verification triggers rollback or the documented recovery path.
 
-Playwright browser gates and the production-image build remain deferred until their dedicated Wave 0 items provide the browser harness and root `Dockerfile`.
+Playwright browser gates remain deferred until their dedicated Wave 0 item provides the browser harness. The production image now exists; its GitHub Actions build and verification remain part of the dedicated CI delivery item.
 
 Use GitHub Actions and GitHub Projects when available. Do not add a separate project-management platform for MVP01.
 
