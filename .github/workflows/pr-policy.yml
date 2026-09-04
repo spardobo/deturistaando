@@ -57,12 +57,12 @@ jobs:
             }
 
             const body = pullRequest.body || '';
-            const closingPattern = /\b(?:closes|fixes|resolves)\s+#(\d+)\b/gi;
-            const issueNumbers = [...body.matchAll(closingPattern)]
+            const issueReferencePattern = /\b(?:closes|fixes|resolves|refs|references|part\s+of)\s*:?\s+#(\d+)\b/gi;
+            const issueNumbers = [...body.matchAll(issueReferencePattern)]
               .map((match) => Number(match[1]));
 
             if (issueNumbers.length === 0) {
-              core.setFailed('The pull request body must contain Closes, Fixes, or Resolves followed by #N.');
+              core.setFailed('The pull request body must reference an issue with Closes/Fixes/Resolves for a final PR or Refs/References/Part of for an intermediate PR.');
               return;
             }
 
