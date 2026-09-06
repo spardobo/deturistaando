@@ -90,12 +90,14 @@ All executable local quality checks run inside the Sail environment. The host re
 
 | Gate | Budget | Checks |
 |---|---:|---|
-| Pre-commit | Target `≤ 90 s` | Pint, Larastan, and the Unit suite. |
-| Pre-push | Target `≤ 3 min` | Frontend production build followed by Pint, Larastan, and all current PHP tests. |
+| Pre-commit | Target `≤ 90 s` | Pint, Larastan, the Unit suite, scoped Vite+ checks, documentation links, and requirement identifiers. |
+| Pre-push | Target `≤ 3 min` | The complete pre-commit gate, frontend production build, and all current PHP tests. |
 
 If a gate exceeds its budget consistently, move expensive checks to CI instead of encouraging bypass.
 
-Husky versions both hooks in `.husky/`. The hooks invoke repository-owned Composer scripts through Sail, fail closed when a check fails, and remain convenience gates rather than merge authority. Keep Sail running before committing or pushing. `--no-verify` is reserved for an exceptional recovery; the pull-request CI still repeats every required check independently.
+Husky versions both hooks in `.husky/`. The hooks delegate to `scripts/quality/pre-commit.sh` and `scripts/quality/pre-push.sh`, which execute repository-owned Composer and npm commands through Sail. They fail closed when a check fails and remain convenience gates rather than merge authority. Keep Sail running before committing or pushing. `--no-verify` is reserved for an exceptional recovery; pull-request CI remains the merge authority.
+
+Vite+ owns JavaScript formatting and linting for `resources/js/` and `vite.config.js`; Pint remains the PHP formatter. `npm run check:docs` validates repository-local Markdown targets and checks every referenced `REQ-*` identifier against the canonical headings in `docs/requirements.md`. These checks validate document integrity, not whether a requirement has been implemented.
 
 The initial scripts expose `test:unit`, `test:feature`, and `test:all` separately. Coverage runs join pre-push and CI after the first owned domain rules exist. Critical Chromium Playwright runs join those gates after the first complete browser journey exists. Do not introduce placeholder thresholds or browser tests for generated starter-kit code.
 

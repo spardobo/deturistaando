@@ -185,8 +185,8 @@ Dependabot maintenance is the only operational exception to issue linkage: a pul
 Local quality gates increase in cost without replacing CI:
 
 1. During development, run the smallest focused test that proves the behavior being changed.
-2. Pre-commit runs Pint, Larastan, and the Unit suite with a target budget of 90 seconds.
-3. Pre-push creates the frontend production build before running all current PHP quality checks and tests, with a target budget of three minutes.
+2. Pre-commit runs Pint, Larastan, the Unit suite, scoped Vite+ checks, documentation links, and requirement identifiers with a target budget of 90 seconds.
+3. Pre-push repeats the pre-commit gate, creates the frontend production build, and runs all current PHP quality checks and tests with a target budget of three minutes.
 4. Pull-request CI repeats the complete required baseline in a disposable environment with PostgreSQL.
 5. Coverage and critical Chromium browser tests enter pre-push and CI only after owned domain rules and complete browser journeys exist.
 
