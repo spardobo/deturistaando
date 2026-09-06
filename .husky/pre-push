@@ -2,5 +2,4 @@
 set -eu
 
 echo "Running pre-push quality checks..."
-./vendor/bin/sail npm run build
-./vendor/bin/sail composer test
+./scripts/quality/pre-push.sh

@@ -4,8 +4,15 @@
     "type": "module",
     "scripts": {
         "build": "vp build",
+        "check:docs": "node scripts/quality/check-repository-integrity.mjs",
+        "check:frontend": "vp check resources/js scripts/quality vite.config.js",
         "dev": "vp dev",
-        "prepare": "husky"
+        "format": "vp fmt resources/js scripts/quality vite.config.js --write",
+        "format:check": "vp fmt resources/js scripts/quality vite.config.js --check",
+        "lint": "vp lint resources/js scripts/quality vite.config.js",
+        "prepare": "husky",
+        "quality:local": "npm run check:frontend && npm run check:docs && npm run test:quality",
+        "test:quality": "node --test scripts/quality/*.test.mjs"
     },
     "dependencies": {
         "@laravel/passkeys": "^0.2.0",

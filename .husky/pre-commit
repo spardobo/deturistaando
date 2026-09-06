@@ -2,4 +2,4 @@
 set -eu
 
 echo "Running pre-commit quality checks..."
-./vendor/bin/sail composer quality:quick
+./scripts/quality/pre-commit.sh
