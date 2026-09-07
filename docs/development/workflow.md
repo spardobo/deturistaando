@@ -148,7 +148,17 @@ PostgreSQL 16 is the required database for development and automated tests. Afte
 
 `migrate:fresh` drops all tables in the selected database. Never run this local reset command against staging or production.
 
-Formatting, static analysis, frontend checks, and Playwright also run through Sail. Production uses the independent `Dockerfile` at the repository root; it does not reuse the Sail development image. See [ADR-005](../architecture/decisions/005-sail-development-and-production-container.md).
+Formatting, static analysis, frontend checks, and dependency audits run through Sail. Gitleaks and Playwright run through repository wrappers that use pinned official Docker images, so neither scanner nor browser dependencies are installed on the host. Production uses the independent `Dockerfile` at the repository root; it does not reuse the Sail development image. See [ADR-005](../architecture/decisions/005-sail-development-and-production-container.md).
+
+Run the current security gates and verify the browser harness with:
+
+```bash
+./scripts/quality/dependency-audit.sh
+./scripts/quality/secret-scan.sh
+./scripts/quality/playwright.sh test:e2e:harness
+```
+
+The dependency gate blocks all Composer advisories and abandoned locked packages, plus npm findings at `high` or `critical` severity. The Playwright harness is available but is not part of pre-push until `tests/Browser/` contains a complete owned journey.
 
 Build and smoke-test the production image independently:
 
@@ -186,7 +196,7 @@ Local quality gates increase in cost without replacing CI:
 
 1. During development, run the smallest focused test that proves the behavior being changed.
 2. Pre-commit runs Pint, Larastan, the Unit suite, scoped Vite+ checks, documentation links, and requirement identifiers with a target budget of 90 seconds.
-3. Pre-push repeats the pre-commit gate, creates the frontend production build, and runs all current PHP quality checks and tests with a target budget of three minutes.
+3. Pre-push repeats the pre-commit gate, audits locked dependencies, scans reachable Git history for secrets, creates the frontend production build, and runs all current PHP quality checks and tests with a target budget of three minutes.
 4. Pull-request CI repeats the complete required baseline in a disposable environment with PostgreSQL.
 5. Coverage and critical Chromium browser tests enter pre-push and CI only after owned domain rules and complete browser journeys exist.
 
@@ -219,7 +229,7 @@ The delivery target is:
 6. The release verifies health, queue state, migration, and the main experience flow.
 7. A failed verification triggers rollback or the documented recovery path.
 
-Playwright browser gates remain deferred until their dedicated Wave 0 item provides the browser harness. The production image now exists; its GitHub Actions build and verification remain part of the dedicated CI delivery item.
+The Playwright container harness now exists. Product browser journeys and their CI gate remain deferred until complete owned flows exist. The production image is also available, while its GitHub Actions build and verification remain part of the dedicated CI delivery item.
 
 Use GitHub Actions and GitHub Projects when available. Do not add a separate project-management platform for MVP01.
 

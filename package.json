@@ -5,13 +5,16 @@
     "scripts": {
         "build": "vp build",
         "check:docs": "node scripts/quality/check-repository-integrity.mjs",
-        "check:frontend": "vp check resources/js scripts/quality vite.config.js",
+        "check:frontend": "vp check resources/js scripts/quality playwright.config.js vite.config.js",
         "dev": "vp dev",
-        "format": "vp fmt resources/js scripts/quality vite.config.js --write",
-        "format:check": "vp fmt resources/js scripts/quality vite.config.js --check",
-        "lint": "vp lint resources/js scripts/quality vite.config.js",
+        "format": "vp fmt resources/js scripts/quality playwright.config.js vite.config.js --write",
+        "format:check": "vp fmt resources/js scripts/quality playwright.config.js vite.config.js --check",
+        "lint": "vp lint resources/js scripts/quality playwright.config.js vite.config.js",
         "prepare": "husky",
         "quality:local": "npm run check:frontend && npm run check:docs && npm run test:quality",
+        "test:e2e": "playwright test",
+        "test:e2e:harness": "node scripts/quality/verify-playwright.mjs",
+        "test:e2e:list": "playwright test --list",
         "test:quality": "node --test scripts/quality/*.test.mjs"
     },
     "dependencies": {
@@ -30,6 +33,7 @@
         "lightningcss-linux-x64-gnu": "^1.29.1"
     },
     "devDependencies": {
+        "@playwright/test": "1.63.0",
         "husky": "^9.1.7"
     }
 }
