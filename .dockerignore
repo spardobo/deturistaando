@@ -1,5 +1,5 @@
 ##############################################################################
-# Version-control and repository metadata
+# version-control and repository metadata
 ##############################################################################
 .git/
 .github/
@@ -38,7 +38,7 @@ openspec/
 *.swo
 
 ##############################################################################
-# Environment files, secrets, and certificates
+# environment files, secrets, and certificates
 ##############################################################################
 .env
 .env.*
@@ -55,7 +55,7 @@ auth.json
 *.pfx
 
 ##############################################################################
-# Installed dependencies and local frontend output
+# installed dependencies and local frontend output
 ##############################################################################
 node_modules/
 vendor/
@@ -64,7 +64,7 @@ public/hot
 public/storage
 
 ##############################################################################
-# Runtime-generated state, caches, and reports
+# runtime-generated state, caches, and reports
 ##############################################################################
 bootstrap/cache/*
 storage/debugbar/
@@ -87,7 +87,7 @@ tmp/
 *.log
 
 ##############################################################################
-# Development and documentation sources not required at runtime
+# development and documentation sources not required at runtime
 ##############################################################################
 docs/
 tests/
@@ -112,7 +112,7 @@ docker-compose*.yml
 *pipeline*.yml
 
 ##############################################################################
-# Operating-system and downloaded-file metadata
+# operating-system and downloaded-file metadata
 ##############################################################################
 .DS_Store
 Thumbs.db

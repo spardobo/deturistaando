@@ -13,7 +13,7 @@ use function Laravel\Prompts\spin;
 class InstallFeaturesCommand extends Command
 {
     /**
-     * The name and signature of the console command.
+     * the name and signature of the console command.
      *
      * @var string
      */
@@ -21,7 +21,7 @@ class InstallFeaturesCommand extends Command
         {--answers= : JSON string of answers to skip interactive prompts}';
 
     /**
-     * The console command description.
+     * the console command description.
      *
      * @var string
      */

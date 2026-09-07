@@ -16,7 +16,7 @@ use Laravel\Fortify\Fortify;
 class FortifyServiceProvider extends ServiceProvider
 {
     /**
-     * Register any application services.
+     * register any application services.
      */
     public function register(): void
     {
@@ -24,7 +24,7 @@ class FortifyServiceProvider extends ServiceProvider
     }
 
     /**
-     * Bootstrap any application services.
+     * bootstrap any application services.
      */
     public function boot(): void
     {
@@ -34,7 +34,7 @@ class FortifyServiceProvider extends ServiceProvider
     }
 
     /**
-     * Configure Fortify actions.
+     * configure Fortify actions.
      */
     private function configureActions(): void
     {
@@ -45,7 +45,7 @@ class FortifyServiceProvider extends ServiceProvider
     }
 
     /**
-     * Configure Fortify views.
+     * configure Fortify views.
      */
     private function configureViews(): void
     {
@@ -67,7 +67,7 @@ class FortifyServiceProvider extends ServiceProvider
     }
 
     /**
-     * Configure rate limiting.
+     * configure rate limiting.
      */
     private function configureRateLimiting(): void
     {

@@ -36,7 +36,7 @@ class User extends Authenticatable implements PasskeyUser
     use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
     /**
-     * Get the attributes that should be cast.
+     * get the attributes that should be cast.
      *
      * @return array<string, string>
      */
@@ -49,7 +49,7 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
-     * Get the user's initials
+     * get the user's initials
      */
     public function initials(): string
     {
