@@ -1920,7 +1920,7 @@ Wave 0 installs Socialite and establishes the Google provider configuration cont
 
 **Priority:** Must | **Type:** Technical constraint | **Module:** Technology | **Source:** WS
 
-**Description:** Development must use Laravel Sail with the application, PostgreSQL, mail, and local dependencies in containers. PHP, Composer, Node, test, and quality commands must run through Sail. Production must use an independent root `Dockerfile`, and GitHub Actions must run the approved checks in containers and verify the production build.
+**Description:** Local development must use Laravel Sail with the application, PostgreSQL, mail, and local dependencies in containers. Local PHP, Composer, Node, test, and quality commands must run through Sail. GitHub Actions must execute PHP, Composer, and Node directly on an ephemeral runner, using containers only for services or tools that justify their isolation. Production must use an independent root `Dockerfile`; its automated build and verification remain a separate delivery obligation.
 
 **User Story**
 
@@ -1932,19 +1932,31 @@ Wave 0 installs Socialite and establishes the Google provider configuration cont
 
 **Acceptance criteria:**
 
-> **Given** a host with Docker and the repository checkout
+> **Given** a local development host with Docker and the repository checkout
 >
-> **When** local or continuous-integration checks run
+> **When** application or quality commands run
 >
-> **Then** Sail provides the application, PostgreSQL, mail, and required dependencies, and runs PHP tests, Pint, Larastan, npm, and Playwright without requiring PHP, Composer, Node, or PostgreSQL on the host.
+> **Then** Sail provides the application, PostgreSQL, mail, and required application dependencies, and runs PHP, Composer, Node, test, and quality commands without requiring those runtimes on the host.
+
+> **Given** a local quality check that needs a specialized isolated runtime
+>
+> **When** Gitleaks or Playwright runs
+>
+> **Then** its repository wrapper uses the approved pinned container without installing the scanner or browser runtime on the host.
 
 > **Given** that a change enters continuous integration
 >
+> **When** required quality and security checks run
+>
+> **Then** the ephemeral runner executes PHP, Composer, and Node directly, while isolated services or tools such as PostgreSQL and Gitleaks run in containers.
+
+> **Given** that production-image automation is implemented
+>
 > **When** the deployable artifact is verified
 >
-> **Then** GitHub Actions builds the independent production image from the root `Dockerfile` successfully.
+> **Then** GitHub Actions builds the independent production image from the root `Dockerfile` successfully without starting Sail.
 
-**Verification:** Sail execution on a Docker-only host, CI execution in containers, and clean production-image build.
+**Verification:** Sail execution on a Docker-only local host, CI workflow inspection, required CI evidence, and a clean production-image build when its dedicated automation item is delivered.
 
 #### REQ-TEC-008 — Keep AI outside product runtime
 

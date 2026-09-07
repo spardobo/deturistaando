@@ -28,13 +28,15 @@ flowchart LR
 |---|---|---|
 | Backlog | Valuable idea or identified defect. | Scope and priority are clear enough to refine. |
 | Ready | Meets Definition of Ready. | Development starts and WIP is available. |
-| Active | One owner is changing code or documentation. | Local evidence is complete. |
-| Review | Pull request is focused and self-reviewed. | Required feedback and CI are complete. |
-| Verify | Change is merged or deployed to the target test environment. | Acceptance and operational checks pass. |
-| Done | Required evidence exists and documentation is current. | Reopen only for a new defect or changed requirement. |
-| Blocked | External decision, access, provider, or defect prevents progress. | Blocker and next action are resolved. |
+| Active | The delivering actor moves the item when implementation begins. | Complete local evidence, open the pull request, and move the item to `Review`. |
+| Review | The pull request is open, focused, and self-reviewed. | Merge after required checks pass, then move the item to `Verify`. |
+| Verify | The change is merged into `main`; the delivering actor verifies the integrated result and acceptance evidence. | Move to `Done` only after the required evidence passes. |
+| Done | Acceptance evidence exists, required checks passed, and documentation is current. | Reopen only for a new defect or changed requirement. |
+| Blocked | An external decision, access restriction, provider dependency, or defect actually prevents progress; record the blocker and next action. | Resolve the blocker and return the item to its prior actionable state. |
 
 WIP limit is one item in `Active` for the primary developer. A blocked item does not justify starting several unrelated features.
+
+The actor delivering the work owns these state transitions. This assigns operational responsibility without fixing it to one named person, so the workflow remains valid as the team changes.
 
 ## Work item
 
@@ -131,7 +133,7 @@ Use the repository-local Sail executable for application commands:
 ./vendor/bin/sail test
 ```
 
-Run `./vendor/bin/sail npm ci` once after cloning to install frontend dependencies from the lock file and activate the versioned Husky hooks. Keep Sail running while committing and pushing because both hooks execute their checks inside the application container.
+Run `./vendor/bin/sail npm ci` once after cloning to install JavaScript dependencies from the lock file and activate the versioned Husky hooks. Keep Sail running while committing and pushing because both hooks execute their checks inside the application container.
 
 Docker Desktop groups the development stack as `deturistaando`. It contains `deturistaando-laravel-app`, `deturistaando-postgres-db`, and `deturistaando-mailpit-dev`; the application image is `sail-deturistaando:dev`. The stack exposes the application at `http://localhost:8000`, PostgreSQL on port `5432`, and the Mailpit inbox at `http://localhost:8025`.
 
@@ -148,7 +150,7 @@ PostgreSQL 16 is the required database for development and automated tests. Afte
 
 `migrate:fresh` drops all tables in the selected database. Never run this local reset command against staging or production.
 
-Formatting, static analysis, frontend checks, and dependency audits run through Sail. Gitleaks and Playwright run through repository wrappers that use pinned official Docker images, so neither scanner nor browser dependencies are installed on the host. Production uses the independent `Dockerfile` at the repository root; it does not reuse the Sail development image. See [ADR-005](../architecture/decisions/005-sail-development-and-production-container.md).
+Formatting, static analysis, JavaScript checks, and dependency audits run through Sail during local development. Gitleaks and Playwright run through repository wrappers that use pinned official Docker images, so neither scanner nor browser dependencies are installed on the host. Production uses the independent `Dockerfile` at the repository root; it does not reuse the Sail development image. See [ADR-005](../architecture/decisions/005-sail-development-and-production-container.md).
 
 Run the current security gates and verify the browser harness with:
 
@@ -217,7 +219,7 @@ GentleAI and coding agents can analyze, implement, test, and review. They do not
 
 ## CI/CD flow
 
-The current automation baseline uses one required `quality` job on a disposable GitHub-hosted runner with PHP 8.4, Composer 2, Node.js 24, and an ephemeral PostgreSQL 16 Alpine service. It directly runs Composer validation and installation, Laravel configuration reset, PHP and JavaScript format and lint checks, all current PHP and Node tests, documentation validation, dependency audits, a reachable-history Gitleaks scan, and the frontend build. Local development remains Sail-based; CI does not start Sail or Mailpit.
+The current automation baseline uses one required `quality` job on a disposable GitHub-hosted runner with PHP 8.4, Composer 2, Node.js 24, and an ephemeral PostgreSQL 16 Alpine service. It directly runs Composer validation and installation, Laravel configuration reset, PHP and JavaScript format and lint checks, all current PHP and Node tests, documentation validation, dependency audits, a reachable-history Gitleaks scan, and the frontend production build. Local development remains Sail-based; CI does not start Sail or Mailpit.
 
 Checkout uses full history for Gitleaks. All actions are fixed by commit SHA, and PostgreSQL and Gitleaks are fixed by image digest. `actions/setup-node` caches npm downloads and `actions/cache` caches Composer download archives with a `composer.lock`-derived key. CI never caches `node_modules/` or `vendor/`; `npm ci` and `composer install` reconstruct both dependency trees from lockfiles on every run.
 
@@ -234,6 +236,8 @@ The delivery target is:
 7. A failed verification triggers rollback or the documented recovery path.
 
 The Playwright container harness now exists. Product browser journeys and their CI gate remain deferred until complete owned flows exist. The production image is also available, while its GitHub Actions build and verification remain part of the dedicated CI delivery item.
+
+This CI boundary is recorded in [ADR-006](../architecture/decisions/006-lightweight-ci-runtime.md). Direct execution on an ephemeral runner preserves independent evidence without extending the local Sail requirement into hosted automation.
 
 Use GitHub Actions and GitHub Projects when available. Do not add a separate project-management platform for MVP01.
 

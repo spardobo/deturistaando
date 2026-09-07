@@ -188,7 +188,11 @@ The production image pins PHP 8.4, Composer 2, and Node.js 24 build stages by ve
 
 The runtime baseline targets medium traffic: nginx limits request bodies to 10 MB, compresses and caches only versioned Vite assets, and sends requests exclusively through `public/index.php`; PHP-FPM recycles workers and caps long requests. An explicit hash-aware location routes Livewire 4 endpoints to Laravel instead of treating them as static files, while Flux continues through the same front-controller fallback. Livewire and Flux control the cache headers for their own versioned scripts; interactive update and upload endpoints remain dynamic. Nginx reaches PHP-FPM through a private Unix socket owned by `www-data`, avoiding a same-container TCP listener without retaining idle FastCGI connections. Dedicated Nginx buffering directories are created for and owned by the rootless runtime user so disk spill remains available under sustained load. Baseline OWASP response headers are emitted by nginx while `.well-known` remains available for passkeys. TLS and HSTS belong to the deployment edge, where HTTPS is actually terminated. These capacity values are starting points and must be adjusted from production measurements rather than treated as universal limits.
 
-CI runs tests and quality checks in containers. Wiring the root production `Dockerfile` build and scan into GitHub Actions remains part of the dedicated CI delivery item. See [ADR-005](decisions/005-sail-development-and-production-container.md).
+### Continuous integration runtime
+
+GitHub Actions uses an ephemeral hosted runner and executes PHP, Composer, and Node commands directly on that runner. Sail remains mandatory only for local development. CI uses containers where an isolated service or tool provides a clear boundary: PostgreSQL supplies the disposable integration database, Gitleaks scans repository history, and Playwright will provide browser dependencies when complete product journeys enter the gate.
+
+The independent production `Dockerfile` remains the deployable artifact. Building and verifying it in GitHub Actions is a separate future obligation and does not require Sail. See [ADR-005](decisions/005-sail-development-and-production-container.md) for the local and production container decision and [ADR-006](decisions/006-lightweight-ci-runtime.md) for the refined CI boundary.
 
 ## Environments and observability
 
@@ -215,3 +219,4 @@ MVP01 does not use microservices, Kubernetes, event sourcing, CQRS infrastructur
 - [ADR-003: Organizer accounts and scoped non-account access](decisions/003-scoped-non-account-access.md).
 - [ADR-004: Official Laravel Livewire application stack](decisions/004-laravel-livewire-application-stack.md).
 - [ADR-005: Laravel Sail for development and an independent production image](decisions/005-sail-development-and-production-container.md).
+- [ADR-006: Lightweight CI runtime](decisions/006-lightweight-ci-runtime.md).
