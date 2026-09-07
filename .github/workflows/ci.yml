@@ -37,7 +37,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:16-alpine@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
         env:
           POSTGRES_DB: testing
           POSTGRES_USER: postgres
@@ -53,6 +53,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
 
       - name: Set up PHP
         uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
@@ -65,6 +67,18 @@ jobs:
       - name: Validate Composer metadata
         run: composer validate --strict
 
+      - name: Resolve Composer cache directory
+        id: composer-cache
+        run: echo "files-dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.composer-cache.outputs.files-dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
       - name: Install Composer dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
 
@@ -73,16 +87,48 @@ jobs:
         with:
           node-version: "24"
           cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Clear Laravel configuration cache
+        run: php artisan config:clear --ansi
+
+      - name: Check PHP formatting
+        run: composer check:format
+
+      - name: Analyze PHP
+        run: composer check:lint
+
+      - name: Check JavaScript formatting
+        run: npm run check:format
+
+      - name: Lint JavaScript
+        run: npm run check:lint
+
+      - name: Test Node.js quality tooling
+        run: npm test
+
+      - name: Validate documentation
+        run: npm run check:documentation
+
+      - name: Audit Composer dependencies
+        run: composer audit --locked --no-interaction --abandoned=fail
+
+      - name: Audit npm dependencies
+        run: npm audit --audit-level=high
+
+      - name: Scan reachable Git history for secrets
+        run: |
+          docker run --rm \
+            --volume "$GITHUB_WORKSPACE:/repo:ro" \
+            --workdir /repo \
+            ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
+            git --no-banner --redact /repo
+
       - name: Build frontend assets
         run: npm run build
 
-      - name: Run PHP quality checks and tests
-        run: |
-          php artisan config:clear --ansi
-          composer check:format
-          composer check:lint
-          composer test
+      - name: Run PHP test suite
+        run: composer test

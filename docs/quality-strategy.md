@@ -126,10 +126,13 @@ Recommended local tools:
 
 ## Continuous integration
 
-The current GitHub Actions baseline runs on pull requests targeting `main` and on pushes to `main`. CI uses a disposable `ubuntu-latest` runner with PHP 8.4, Composer 2, Node.js 24, and an ephemeral PostgreSQL 16 Alpine service. It installs dependencies exclusively from `composer.lock` and `package-lock.json`, runs `npm ci` and the frontend production build before rendering Feature-test views, and then runs Pint, Larastan, and PHPUnit. Local development continues to use Sail; the hosted CI runner is an isolated verification environment, not a replacement for the local runtime contract.
+The current GitHub Actions baseline runs on pull requests targeting `main` and on pushes to `main`. One required `quality` job uses a disposable `ubuntu-latest` runner with PHP 8.4, Composer 2, Node.js 24, and an ephemeral PostgreSQL 16 Alpine service. It executes direct runner commands rather than starting Sail, while reproducing the deterministic guarantees of pre-push: lockfile installation, configuration reset, PHP and JavaScript format and lint checks, Node tooling tests, documentation validation, dependency audits, reachable-history secret scanning, frontend build, and the complete PHP suite.
+
+GitHub Actions are fixed by commit SHA and container images by digest. Checkout fetches complete history for Gitleaks. The npm cache stores package-manager downloads through `actions/setup-node`; the Composer cache stores only downloaded archives through `actions/cache`, with a key derived from `composer.lock`. Neither cache stores `node_modules/` or `vendor/`, and both dependency trees are recreated from their committed lockfiles on every run.
 
 The current automated gates are:
 
+- Required quality job with PostgreSQL 16, the complete deterministic pre-push baseline, dependency audits, documentation validation, and Gitleaks.
 - Pull-request policy: branch naming, an approved closing or non-closing reference to at least one `status:approved` issue, and exactly one `type:*` label. Only the final pull request in a documented chain uses a closing keyword.
 - Weekly Dependabot checks for Composer, npm, and GitHub Actions.
 
@@ -145,11 +148,11 @@ The complete target gate remains:
 8. Production-image build from the root `Dockerfile`, plus a vulnerability scan when deployment files change.
 9. Documentation link and identifier checks.
 
-Critical Playwright coverage, stable visual snapshots, container scanning, the GitHub Actions production-image build, and CI integration for the local dependency, secret, and documentation checks remain deferred until their dedicated items provide the required automation. The independent production `Dockerfile` is available for local build and smoke evidence, but it is not yet a repository gate. Do not present target gates as current evidence.
+Critical Playwright coverage, stable visual snapshots, architecture tests, container scanning, and the GitHub Actions production-image build remain deferred until their dedicated items provide the required automation. The independent production `Dockerfile` is available for local build and smoke evidence, but it is not yet a repository gate. Do not present target gates as current evidence.
 
 Coverage measurement is also deferred until owned domain behavior exists. Its first implementation must exclude generated and infrastructure-only code, report the Core and Important tiers separately where tooling permits, and preserve the `100/80/0` risk interpretation rather than impose one repository-wide percentage.
 
-Use parallel jobs where independence reduces feedback time. The dedicated CI delivery item must verify the independent production build. Build the deployable image once and promote the same artifact.
+Keep the current deterministic baseline in one required job so branch protection has one clear result and this small project avoids duplicated setup. Split independent jobs only if measured duration exceeds the feedback budget. The dedicated CI delivery item must verify the independent production build. Build the deployable image once and promote the same artifact.
 
 ## Review gate
 

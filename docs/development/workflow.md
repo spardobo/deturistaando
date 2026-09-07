@@ -197,7 +197,7 @@ Local quality gates increase in cost without replacing CI:
 1. During development, run the smallest focused test that proves the behavior being changed.
 2. `.husky/pre-commit` delegates to `scripts/quality/gates/pre-commit.sh`. The gate clears cached Laravel configuration, runs `composer check:format`, `composer check:lint`, and `composer test:unit`, then runs the independent Vite+ `npm run check:format` and `npm run check:lint` commands, tests the documentation validator, and applies it to the repository. PHPStan remains the PHP static analyzer behind the stable `check:lint` command. Its target budget is 90 seconds.
 3. `.husky/pre-push` delegates to `scripts/quality/gates/pre-push.sh`. The gate repeats pre-commit, audits locked dependencies, scans reachable Git history for secrets, creates the frontend production build, and runs `composer test:feature`. The composed gates therefore cover all current PHP tests without repeating Pint, Larastan, or Unit tests. Its target budget is three minutes.
-4. Pull-request CI repeats the complete required baseline in a disposable environment with PostgreSQL.
+4. Pull-request CI repeats the deterministic pre-push baseline with direct runner commands in one required job and a disposable PostgreSQL 16 service. It also runs the complete Node test command and documentation validator rather than only the focused local pre-commit test.
 5. Coverage and critical Chromium browser tests enter pre-push and CI only after owned domain rules and complete browser journeys exist.
 
 Composer and npm expose atomic capabilities with operation-first names: `format` changes files, `check:*` inspects without changing files, and `test:*` runs a named suite. They share a grammar, not an artificial one-to-one catalog: each ecosystem exposes only capabilities backed by a real tool or suite. Gate scripts own stage composition; Husky only decides when to invoke them. `npm test` runs every current Node test, `npm run check:documentation` applies the repository validator, and `npm run test:documentation-validator` proves that the validator itself recognizes controlled failures.
@@ -217,7 +217,9 @@ GentleAI and coding agents can analyze, implement, test, and review. They do not
 
 ## CI/CD flow
 
-The current automation baseline uses a disposable GitHub-hosted runner with PHP 8.4, Composer 2, Node.js 24, and an ephemeral PostgreSQL 16 Alpine service. It installs Composer and npm dependencies from their committed lock files, runs the PHP quality and test suite, builds frontend assets, validates pull-request policy, and schedules weekly Dependabot updates. Local development remains Sail-based; CI does not start Sail or Mailpit.
+The current automation baseline uses one required `quality` job on a disposable GitHub-hosted runner with PHP 8.4, Composer 2, Node.js 24, and an ephemeral PostgreSQL 16 Alpine service. It directly runs Composer validation and installation, Laravel configuration reset, PHP and JavaScript format and lint checks, all current PHP and Node tests, documentation validation, dependency audits, a reachable-history Gitleaks scan, and the frontend build. Local development remains Sail-based; CI does not start Sail or Mailpit.
+
+Checkout uses full history for Gitleaks. All actions are fixed by commit SHA, and PostgreSQL and Gitleaks are fixed by image digest. `actions/setup-node` caches npm downloads and `actions/cache` caches Composer download archives with a `composer.lock`-derived key. CI never caches `node_modules/` or `vendor/`; `npm ci` and `composer install` reconstruct both dependency trees from lockfiles on every run.
 
 GitHub Copilot Code Review and the Copilot coding agent are not part of Copilot Free, so neither is configured. Human acceptance and deterministic CI remain authoritative.
 
