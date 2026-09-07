@@ -14,14 +14,14 @@ This document defines the evidence required to release the [MVP01 requirements](
 
 ## Test strategy
 
-| Level | Scope | Run |
+| Level | Scope | Target execution |
 |---|---|---|
 | Unit and domain | `K/N`, repeated visits, entitlement, capacity, expiry, and state transitions. | During development and CI. |
 | Feature | Laravel routes, Livewire actions, policies, validation, and audit behavior. | During development and CI. |
-| Architecture | Module ownership and inward dependency direction. | CI. |
+| Architecture | Module ownership and inward dependency direction. | Deferred; CI after owned modules and rules exist. |
 | Integration | PostgreSQL constraints, transactions, OAuth linking, queues, storage, and provider adapters. | CI with real PostgreSQL and faked external providers. |
 | Contract | Project-owned ports and Google Wallet mapping/error classification. | CI; selected provider sandbox checks before release. |
-| Browser | Critical visitor, organizer, and business journeys. | Pull request and staging smoke test. |
+| Browser | Critical visitor, organizer, and business journeys. | Deferred; pull request and staging after complete owned journeys exist. |
 | Operational | Backup restore, deployment, health, and rollback. | Before production release and after material infrastructure change. |
 
 Use the test pyramid as a planning guide:
@@ -126,7 +126,9 @@ Recommended local tools:
 
 ## Continuous integration
 
-The current GitHub Actions baseline runs on pull requests targeting `main` and on pushes to `main`. One required `quality` job uses a disposable `ubuntu-latest` runner with PHP 8.4, Composer 2, Node.js 24, and an ephemeral PostgreSQL 16 Alpine service. It executes direct runner commands rather than starting Sail, while reproducing the deterministic guarantees of pre-push: lockfile installation, configuration reset, PHP and JavaScript format and lint checks, Node tooling tests, documentation validation, dependency audits, reachable-history secret scanning, frontend build, and the complete PHP suite.
+The current GitHub Actions baseline runs on pull requests targeting `main` and on pushes to `main`. One required `quality` job uses a disposable `ubuntu-latest` runner with PHP 8.4, Composer 2, Node.js 24, and an ephemeral PostgreSQL 16 Alpine service. It executes PHP, Composer, and Node directly on the runner rather than starting Sail, while reproducing the deterministic guarantees of pre-push: lockfile installation, configuration reset, PHP and JavaScript format and lint checks, Node tooling tests, documentation validation, dependency audits, reachable-history secret scanning, frontend build, and the complete PHP suite.
+
+Sail is a local-development contract, not a CI runtime requirement. GitHub Actions uses containers selectively where they provide justified isolation: PostgreSQL supplies the ephemeral service database and Gitleaks supplies the pinned scanner. Playwright will use its pinned browser container only after complete product journeys enter CI.
 
 GitHub Actions are fixed by commit SHA and container images by digest. Checkout fetches complete history for Gitleaks. The npm cache stores package-manager downloads through `actions/setup-node`; the Composer cache stores only downloaded archives through `actions/cache`, with a key derived from `composer.lock`. Neither cache stores `node_modules/` or `vendor/`, and both dependency trees are recreated from their committed lockfiles on every run.
 
@@ -139,7 +141,7 @@ The current automated gates are:
 The complete target gate remains:
 
 1. Dependency installation from committed lock files.
-2. Laravel Pint and frontend formatting or lint checks.
+2. Laravel Pint and JavaScript formatting or lint checks.
 3. Larastan static analysis.
 4. Unit, feature, integration, and architecture tests with PostgreSQL 16.
 5. The npm frontend production build.
@@ -152,7 +154,7 @@ Critical Playwright coverage, stable visual snapshots, architecture tests, conta
 
 Coverage measurement is also deferred until owned domain behavior exists. Its first implementation must exclude generated and infrastructure-only code, report the Core and Important tiers separately where tooling permits, and preserve the `100/80/0` risk interpretation rather than impose one repository-wide percentage.
 
-Keep the current deterministic baseline in one required job so branch protection has one clear result and this small project avoids duplicated setup. Split independent jobs only if measured duration exceeds the feedback budget. The dedicated CI delivery item must verify the independent production build. Build the deployable image once and promote the same artifact.
+Keep the current deterministic baseline in one required job so branch protection has one clear result and this small project avoids duplicated setup. Split independent jobs only if measured duration exceeds the feedback budget. A dedicated future delivery item must build and verify the independent production image without starting Sail. Build the deployable image once and promote the same artifact.
 
 ## Review gate
 
