@@ -86,20 +86,31 @@ A flaky test is fixed or removed from the required suite. It is never retried un
 
 ## Local feedback
 
-All executable local quality checks run inside the Sail environment. The host requires Docker, not local PHP, Composer, Node, PostgreSQL, or browser-test runtimes. Use `./vendor/bin/sail` for tests, Pint, Larastan, npm scripts, and Playwright so local and CI evidence share the same runtime boundary.
+All executable local quality checks run in containers. The host requires Docker, not local PHP, Composer, Node, PostgreSQL, scanners, or browser-test runtimes. Application checks and npm maintenance use Sail; repository wrappers run Gitleaks and Playwright in their pinned official images.
 
 | Gate | Budget | Checks |
 |---|---:|---|
 | Pre-commit | Target `≤ 90 s` | Pint, Larastan, the Unit suite, scoped Vite+ checks, documentation links, and requirement identifiers. |
-| Pre-push | Target `≤ 3 min` | The complete pre-commit gate, frontend production build, and all current PHP tests. |
+| Pre-push | Target `≤ 3 min` | The complete pre-commit gate, dependency audit, Git-history secret scan, frontend production build, and all current PHP tests. |
 
 If a gate exceeds its budget consistently, move expensive checks to CI instead of encouraging bypass.
 
-Husky versions both hooks in `.husky/`. The hooks delegate to `scripts/quality/pre-commit.sh` and `scripts/quality/pre-push.sh`, which execute repository-owned Composer and npm commands through Sail. They fail closed when a check fails and remain convenience gates rather than merge authority. Keep Sail running before committing or pushing. `--no-verify` is reserved for an exceptional recovery; pull-request CI remains the merge authority.
+Husky versions both hooks in `.husky/`. The hooks delegate to `scripts/quality/pre-commit.sh` and `scripts/quality/pre-push.sh`, which execute repository-owned commands in Sail or pinned scanner containers. They fail closed when a check fails and remain convenience gates rather than merge authority. Keep Sail running before committing or pushing. `--no-verify` is reserved for an exceptional recovery; pull-request CI remains the merge authority.
 
-Vite+ owns JavaScript formatting and linting for `resources/js/` and `vite.config.js`; Pint remains the PHP formatter. `npm run check:docs` validates repository-local Markdown targets and checks every referenced `REQ-*` identifier against the canonical headings in `docs/requirements.md`. These checks validate document integrity, not whether a requirement has been implemented.
+Vite+ owns JavaScript formatting and linting for `resources/js/`, `scripts/quality/`, `playwright.config.js`, and `vite.config.js`; Pint remains the PHP formatter. `npm run check:docs` validates repository-local Markdown targets and checks every referenced `REQ-*` identifier against the canonical headings in `docs/requirements.md`. These checks validate document integrity, not whether a requirement has been implemented.
 
-The initial scripts expose `test:unit`, `test:feature`, and `test:all` separately. Coverage runs join pre-push and CI after the first owned domain rules exist. Critical Chromium Playwright runs join those gates after the first complete browser journey exists. Do not introduce placeholder thresholds or browser tests for generated starter-kit code.
+The initial scripts expose `test:unit`, `test:feature`, and `test:all` separately. Playwright `1.63.0` is fixed in the npm lockfile and its wrapper fixes the matching Noble browser image by digest. `test:e2e:harness` proves that Chromium launches without pretending to cover a product journey; `tests/Browser/` intentionally contains no product specifications until a complete owned journey exists. Coverage and critical Chromium tests join the required gates only after owned domain rules and browser journeys exist.
+
+Run the security and browser tooling without installing it on the host:
+
+```bash
+./scripts/quality/dependency-audit.sh
+./scripts/quality/secret-scan.sh
+./scripts/quality/playwright.sh test:e2e:harness
+./scripts/quality/playwright.sh test:e2e
+```
+
+Composer blocks every known advisory and abandoned locked package. npm reports all findings and blocks on `high` or `critical` severity. Gitleaks scans reachable Git history with redacted output. These checks do not replace review of exposed credentials: revoke a leaked credential before removing it from history.
 
 Recommended local tools:
 
@@ -132,7 +143,7 @@ The complete target gate remains:
 8. Production-image build from the root `Dockerfile`, plus a vulnerability scan when deployment files change.
 9. Documentation link and identifier checks.
 
-Critical Playwright coverage, stable visual snapshots, container scanning, the GitHub Actions production-image build, and the full documentation checker remain deferred until their dedicated items provide the required automation. The independent production `Dockerfile` is available for local build and smoke evidence, but it is not yet a repository gate. Do not present target gates as current evidence.
+Critical Playwright coverage, stable visual snapshots, container scanning, the GitHub Actions production-image build, and CI integration for the local dependency, secret, and documentation checks remain deferred until their dedicated items provide the required automation. The independent production `Dockerfile` is available for local build and smoke evidence, but it is not yet a repository gate. Do not present target gates as current evidence.
 
 Coverage measurement is also deferred until owned domain behavior exists. Its first implementation must exclude generated and infrastructure-only code, report the Core and Important tiers separately where tooling permits, and preserve the `100/80/0` risk interpretation rather than impose one repository-wide percentage.
 
@@ -155,7 +166,7 @@ Review focuses on:
 
 ## Security quality
 
-Apply the minimum gate in the [security architecture](architecture/security.md): authorization and concurrency tests, dependency audit, secret scan, production configuration check, container scan, and focused manual review.
+Apply the minimum gate in the [security architecture](architecture/security.md): authorization and concurrency tests, dependency audit, secret scan, production configuration check, container scan, and focused manual review. The current pre-push gate implements the dependency and Git-history secret scans; production-image scanning remains deferred.
 
 Use OWASP guidance to review applicable risks before public release. Do not add a large security platform when Laravel configuration, tests, and lightweight scanners cover the current risk.
 

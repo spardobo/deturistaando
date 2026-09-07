@@ -80,6 +80,9 @@ storage/logs/
 build/
 coverage/
 dist/
+blob-report/
+playwright-report/
+test-results/
 tmp/
 *.log
 
