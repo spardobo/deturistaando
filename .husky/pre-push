@@ -2,4 +2,4 @@
 set -eu
 
 echo "Running pre-push quality checks..."
-./scripts/quality/pre-push.sh
+./scripts/quality/gates/pre-push.sh

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { validateMarkdownLinks, validateRequirementIds } from "./check-repository-integrity.mjs";
+import { validateMarkdownLinks, validateRequirementIds } from "./validate-documentation.mjs";
 
 function fixture() {
     const root = mkdtempSync(join(tmpdir(), "deturistaando-quality-"));

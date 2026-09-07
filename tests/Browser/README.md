@@ -5,7 +5,7 @@ Add Playwright specifications here only when an owned, complete user journey exi
 After the first product specification exists, run the suite through the pinned browser container:
 
 ```bash
-./scripts/quality/playwright.sh test:e2e
+./scripts/quality/browser/run-playwright.sh test:e2e
 ```
 
 Sail must be running because browser tests use the `deturistaando-network` Docker network and the application service name as their default base URL.
@@ -13,5 +13,5 @@ Sail must be running because browser tests use the `deturistaando-network` Docke
 Verify the pinned browser runtime without inventing a product journey:
 
 ```bash
-./scripts/quality/playwright.sh test:e2e:harness
+./scripts/quality/browser/run-playwright.sh check:playwright-runtime
 ```

@@ -81,4 +81,8 @@ jobs:
         run: npm run build
 
       - name: Run PHP quality checks and tests
-        run: composer test
+        run: |
+          php artisan config:clear --ansi
+          composer check:format
+          composer check:lint
+          composer test
