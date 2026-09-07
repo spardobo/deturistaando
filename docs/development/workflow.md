@@ -153,9 +153,9 @@ Formatting, static analysis, frontend checks, and dependency audits run through 
 Run the current security gates and verify the browser harness with:
 
 ```bash
-./scripts/quality/dependency-audit.sh
-./scripts/quality/secret-scan.sh
-./scripts/quality/playwright.sh test:e2e:harness
+./scripts/quality/security/audit-dependencies.sh
+./scripts/quality/security/scan-git-secrets.sh
+./scripts/quality/browser/run-playwright.sh check:playwright-runtime
 ```
 
 The dependency gate blocks all Composer advisories and abandoned locked packages, plus npm findings at `high` or `critical` severity. The Playwright harness is available but is not part of pre-push until `tests/Browser/` contains a complete owned journey.
@@ -195,12 +195,14 @@ Dependabot maintenance is the only operational exception to issue linkage: a pul
 Local quality gates increase in cost without replacing CI:
 
 1. During development, run the smallest focused test that proves the behavior being changed.
-2. Pre-commit runs Pint, Larastan, the Unit suite, scoped Vite+ checks, documentation links, and requirement identifiers with a target budget of 90 seconds.
-3. Pre-push repeats the pre-commit gate, audits locked dependencies, scans reachable Git history for secrets, creates the frontend production build, and runs all current PHP quality checks and tests with a target budget of three minutes.
+2. `.husky/pre-commit` delegates to `scripts/quality/gates/pre-commit.sh`. The gate clears cached Laravel configuration, runs `composer check:format`, `composer check:lint`, and `composer test:unit`, then runs the independent Vite+ `npm run check:format` and `npm run check:lint` commands, tests the documentation validator, and applies it to the repository. PHPStan remains the PHP static analyzer behind the stable `check:lint` command. Its target budget is 90 seconds.
+3. `.husky/pre-push` delegates to `scripts/quality/gates/pre-push.sh`. The gate repeats pre-commit, audits locked dependencies, scans reachable Git history for secrets, creates the frontend production build, and runs `composer test:feature`. The composed gates therefore cover all current PHP tests without repeating Pint, Larastan, or Unit tests. Its target budget is three minutes.
 4. Pull-request CI repeats the complete required baseline in a disposable environment with PostgreSQL.
 5. Coverage and critical Chromium browser tests enter pre-push and CI only after owned domain rules and complete browser journeys exist.
 
-If a local gate repeatedly exceeds its budget, move the expensive portion to CI instead of normalizing `--no-verify`.
+Composer and npm expose atomic capabilities with operation-first names: `format` changes files, `check:*` inspects without changing files, and `test:*` runs a named suite. They share a grammar, not an artificial one-to-one catalog: each ecosystem exposes only capabilities backed by a real tool or suite. Gate scripts own stage composition; Husky only decides when to invoke them. `npm test` runs every current Node test, `npm run check:documentation` applies the repository validator, and `npm run test:documentation-validator` proves that the validator itself recognizes controlled failures.
+
+If a local gate repeatedly exceeds its budget, move the expensive portion to CI instead of normalizing `--no-verify`. Use `--no-verify` only to recover from a confirmed broken or unavailable local hook mechanism, never to ignore a failing quality check.
 
 ## AI-assisted development
 

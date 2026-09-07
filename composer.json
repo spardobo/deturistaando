@@ -55,39 +55,23 @@
             "Composer\\Config::disableProcessTimeout",
             "@php artisan dev"
         ],
-        "lint": [
+        "format": [
             "pint --parallel"
         ],
-        "lint:check": [
+        "check:format": [
             "pint --parallel --test"
         ],
-        "ci:check": [
-            "Composer\\Config::disableProcessTimeout",
-            "@test"
-        ],
-        "types:check": [
+        "check:lint": [
             "phpstan analyse"
+        ],
+        "test": [
+            "@php artisan test"
         ],
         "test:unit": [
             "@php artisan test --testsuite=Unit"
         ],
         "test:feature": [
             "@php artisan test --testsuite=Feature"
-        ],
-        "test:all": [
-            "@php artisan test"
-        ],
-        "quality:quick": [
-            "@php artisan config:clear --ansi",
-            "@lint:check",
-            "@types:check",
-            "@test:unit"
-        ],
-        "test": [
-            "@php artisan config:clear --ansi",
-            "@lint:check",
-            "@types:check",
-            "@test:all"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

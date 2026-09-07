@@ -91,23 +91,25 @@ All executable local quality checks run in containers. The host requires Docker,
 | Gate | Budget | Checks |
 |---|---:|---|
 | Pre-commit | Target `≤ 90 s` | Pint, Larastan, the Unit suite, scoped Vite+ checks, documentation links, and requirement identifiers. |
-| Pre-push | Target `≤ 3 min` | The complete pre-commit gate, dependency audit, Git-history secret scan, frontend production build, and all current PHP tests. |
+| Pre-push | Target `≤ 3 min` | The complete pre-commit gate, dependency audit, Git-history secret scan, frontend production build, and the Feature suite. Together, the nested gates execute all current PHP tests without repeating Pint, Larastan, or Unit tests. |
 
 If a gate exceeds its budget consistently, move expensive checks to CI instead of encouraging bypass.
 
-Husky versions both hooks in `.husky/`. The hooks delegate to `scripts/quality/pre-commit.sh` and `scripts/quality/pre-push.sh`, which execute repository-owned commands in Sail or pinned scanner containers. They fail closed when a check fails and remain convenience gates rather than merge authority. Keep Sail running before committing or pushing. `--no-verify` is reserved for an exceptional recovery; pull-request CI remains the merge authority.
+Husky versions both hooks in `.husky/`. The hooks are minimal adapters: they delegate to `scripts/quality/gates/pre-commit.sh` and `scripts/quality/gates/pre-push.sh`, which expose every stage command instead of hiding the flow behind a generic quality alias. Repository scripts are grouped by responsibility under `gates/`, `documentation/`, `security/`, and `browser/`. They execute application commands in Sail and scanners or browsers in pinned containers. They fail closed when a check fails and remain convenience gates rather than merge authority. Keep Sail running before committing or pushing. `--no-verify` is reserved for recovery from a broken or unavailable local mechanism, never for ignoring a failing check; pull-request CI remains the merge authority.
 
-Vite+ owns JavaScript formatting and linting for `resources/js/`, `scripts/quality/`, `playwright.config.js`, and `vite.config.js`; Pint remains the PHP formatter. `npm run check:docs` validates repository-local Markdown targets and checks every referenced `REQ-*` identifier against the canonical headings in `docs/requirements.md`. These checks validate document integrity, not whether a requirement has been implemented.
+Command names follow `<operation>:<scope>:<variant>`. `format` changes files, `check:*` inspects without changing files, and `test:*` executes a named test suite. Composer and npm share this grammar but expose only capabilities that exist in their ecosystems; symmetry never justifies a placeholder command. Composer exposes `format`, `check:format`, `check:lint`, `test`, `test:unit`, and `test:feature`. PHPStan remains a static analyzer even though `check:lint` is its stable command name. npm exposes independent `check:format` and `check:lint` commands through Vite+ rather than hiding them behind an aggregate. `npm test` discovers every current Node test, while focused commands such as `test:documentation-validator` remain available for diagnosis and stage-specific gates.
 
-The initial scripts expose `test:unit`, `test:feature`, and `test:all` separately. Playwright `1.63.0` is fixed in the npm lockfile and its wrapper fixes the matching Noble browser image by digest. `test:e2e:harness` proves that Chromium launches without pretending to cover a product journey; `tests/Browser/` intentionally contains no product specifications until a complete owned journey exists. Coverage and critical Chromium tests join the required gates only after owned domain rules and browser journeys exist.
+`npm run test:documentation-validator` proves that the repository-owned validator detects broken Markdown links and invalid or unknown `REQ-*` identifiers. The pre-commit gate runs this test before `npm run check:documentation` applies the validated tool to `README.md` and `docs/`. The application and its validation tool therefore provide separate evidence.
+
+Playwright `1.63.0` is fixed in the npm lockfile and its wrapper fixes the matching Noble browser image by digest. `check:playwright-runtime` proves that Chromium launches without pretending to cover a product journey; `tests/Browser/` intentionally contains no product specifications until a complete owned journey exists. Coverage and critical Chromium tests join the required gates only after owned domain rules and browser journeys exist.
 
 Run the security and browser tooling without installing it on the host:
 
 ```bash
-./scripts/quality/dependency-audit.sh
-./scripts/quality/secret-scan.sh
-./scripts/quality/playwright.sh test:e2e:harness
-./scripts/quality/playwright.sh test:e2e
+./scripts/quality/security/audit-dependencies.sh
+./scripts/quality/security/scan-git-secrets.sh
+./scripts/quality/browser/run-playwright.sh check:playwright-runtime
+./scripts/quality/browser/run-playwright.sh test:e2e
 ```
 
 Composer blocks every known advisory and abandoned locked package. npm reports all findings and blocks on `high` or `critical` severity. Gitleaks scans reachable Git history with redacted output. These checks do not replace review of exposed credentials: revoke a leaked credential before removing it from history.
@@ -128,7 +130,7 @@ The current GitHub Actions baseline runs on pull requests targeting `main` and o
 
 The current automated gates are:
 
-- Pull-request policy: branch naming, a `Closes`, `Fixes`, or `Resolves #N` reference to at least one `status:approved` issue, and exactly one `type:*` label.
+- Pull-request policy: branch naming, an approved closing or non-closing reference to at least one `status:approved` issue, and exactly one `type:*` label. Only the final pull request in a documented chain uses a closing keyword.
 - Weekly Dependabot checks for Composer, npm, and GitHub Actions.
 
 The complete target gate remains:
