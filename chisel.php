@@ -63,8 +63,8 @@ function chiselRemoveNpmPackages(Chisel $c, string ...$packages): void
 }
 
 /**
- * Variant-specific filenames are supplied by the sibling chisel-paths.php.
- * The Single-File Component variant ships the default paths file; the
+ * variant-specific filenames are supplied by the sibling chisel-paths.php.
+ * the Single-File Component variant ships the default paths file; the
  * Multi-File Component variant overlays its own copy during build.
  *
  * @var array{

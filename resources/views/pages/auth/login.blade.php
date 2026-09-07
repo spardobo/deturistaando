@@ -2,7 +2,7 @@
     <div class="flex flex-col gap-6">
         <x-auth-header :title="__('Log in to your account')" :description="__('Enter your email and password below to log in')" />
 
-        <!-- Session Status -->
+        <!-- session status -->
         <x-auth-session-status class="text-center" :status="session('status')" />
 
         {{-- @chisel-passkeys --}}
@@ -12,7 +12,7 @@
         <form method="POST" action="{{ route('login.store') }}" class="flex flex-col gap-6">
             @csrf
 
-            <!-- Email Address -->
+            <!-- email address -->
             <flux:input
                 name="email"
                 :label="__('Email address')"
@@ -24,7 +24,7 @@
                 placeholder="email@example.com"
             />
 
-            <!-- Password -->
+            <!-- password -->
             <div class="relative">
                 <flux:input
                     name="password"
@@ -43,7 +43,7 @@
                 @endif
             </div>
 
-            <!-- Remember Me -->
+            <!-- remember me -->
             <flux:checkbox name="remember" :label="__('Remember me')" :checked="old('remember')" />
 
             <div class="flex items-center justify-end">
