@@ -179,18 +179,21 @@ Use OWASP guidance to review applicable risks before public release. Do not add 
 
 GitHub Copilot Code Review and the Copilot coding agent are not included in Copilot Free and are not configured as repository gates. Reconsider them only if a paid plan or explicit organization entitlement changes that constraint.
 
-## Accessibility and visual quality
+## Accessibility evidence (continuous)
 
-Critical flows target WCAG 2.2 AA.
+Critical flows target WCAG 2.2 AA. Every UI-bearing slice supplies accessibility evidence when it ships; accessibility is not deferred to final hardening or Wave 7.
 
-- Run automated accessibility checks on representative public, private, organizer, and business screens.
-- Manually test keyboard, focus, zoom, touch, screen-reader labels, reduced motion, and error recovery.
+- Run automated accessibility checks on each affected representative public, private, organizer, or business screen.
+- Manually test keyboard, focus, zoom, touch, screen-reader labels, reduced motion, and error recovery for the affected flow.
 - Verify text contrast of at least `4.5:1` and large text contrast of at least `3:1`.
-- Verify that neon color or glow is never the only state signal.
-- Test on a mid-range Android device or equivalent profile.
-- Keep visual-regression snapshots for representative public landing, private pass, validator review, and completion states. Update a baseline only after deliberate visual review.
+- Verify that color, glow, motion, or position is never the only state signal.
+- Test affected mobile flows on a mid-range Android device or equivalent profile.
 
 Automated accessibility tools find only part of the problem. Manual checks remain required.
+
+## Visual-regression baseline evidence (Wave 7)
+
+Wave 7, the penultimate wave, establishes the final visual identity and its deliberate representative visual-regression baselines after the final palette, typography pairing, illustration system, decorative composition, controlled glow and depth, and expressive motion are in place. Keep snapshots for the representative public landing, private pass, validator review, and completion states. Update a baseline only after deliberate visual review.
 
 ## Performance and reliability
 
