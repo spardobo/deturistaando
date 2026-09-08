@@ -144,6 +144,8 @@ Each item must identify its delivery wave, dependencies, acceptance evidence, an
 
 The register sequence supports lookup and does not define implementation order. The wave number controls dependency order and does not replace MoSCoW priority. An item can move to `Ready` only when its required upstream behavior exists or the item includes that behavior.
 
+Wave 0 establishes the architecture baseline for `REQ-MNT-001` through `REQ-MNT-004` by accepting [ADR 001](architecture/decisions/001-modular-monolith-and-hexagonal-architecture.md) and documenting the dependency boundaries. These requirements remain cross-cutting constraints for every later product slice. Executable architecture checks begin when an owned module and concrete dependency boundary exist; Wave 0 does not add an analyzer, empty module scaffolding, or vacuous tests.
+
 Wave 0 installs Socialite and establishes the Google provider configuration contract for `REQ-TEC-003`. Wave 3 implements and verifies the organizer login callback and the safe identity-linking behavior required by `REQ-ORG-001` and `REQ-ORG-002`.
 
 ## Functional requirements

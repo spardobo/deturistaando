@@ -92,7 +92,7 @@ The two Done drafts created before the issue-first gate remain historical drafts
 
 The initial sequence follows risk and produces end-to-end evidence early:
 
-1. Laravel 13 project, Livewire starter kit, base Socialite Google configuration, Sail with PostgreSQL and mail, root production Dockerfile, CI, and dark neon design tokens.
+1. Laravel 13 project, Livewire starter kit, base Socialite Google configuration, Sail with PostgreSQL and mail, root production Dockerfile, and CI.
 2. Google Wallet technical spike: class, object, web issue, QR, and update.
 3. Organizer login, safe identity linking, and empty experience workspace.
 4. Experience draft, participants, goal, benefit, and preview.
@@ -104,6 +104,8 @@ The initial sequence follows risk and produces end-to-end evidence early:
 10. Reporting, recovery, accessibility, performance, and deployment hardening.
 
 The Wallet spike occurs before broad feature work because provider approval and update behavior are the largest external uncertainty.
+
+Wave 0 establishes the modular-monolith and hexagonal decisions without creating speculative modules or adding a standalone architecture analyzer. Each product slice applies those boundaries to its real code. Executable architecture checks join the quality gates only when an owned module and concrete dependency rule make the evidence meaningful.
 
 ## Local development environment
 
