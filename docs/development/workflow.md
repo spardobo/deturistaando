@@ -6,7 +6,7 @@ This document defines a Lean delivery flow for **DeTuristaAndo**. Work is refine
 
 - Use Kanban and continuous flow instead of fixed-scope sprints.
 - Limit active implementation to one primary work item.
-- Deliver vertical slices that produce an observable outcome.
+- Deliver vertical slices that produce an observable outcome and complete functional UX for every UI-bearing surface.
 - Refine only the next ready items.
 - Integrate frequently through short-lived branches.
 - Keep documentation and code in the same change when they describe the same behavior.
@@ -74,6 +74,7 @@ An item is done when:
 - acceptance behavior works;
 - relevant automated tests pass;
 - authorization, failure, and retry paths are covered when applicable;
+- every UI-bearing slice has semantic structure, accessibility, basic responsive behavior, applicable loading, empty, error, success, and recovery states, all applicable security controls, and automated evidence;
 - formatting, static analysis, build, and required scans pass;
 - migrations are reversible or have an explicit recovery path;
 - observability is sufficient for the changed operation;
@@ -101,7 +102,9 @@ The initial sequence follows risk and produces end-to-end evidence early:
 7. Anonymous participation, private view, and Wallet delivery.
 8. Visit confirmation, distinct progress, idempotency, and Wallet update.
 9. Entitlement, capacity, redemption, and audit.
-10. Reporting, recovery, accessibility, performance, and deployment hardening.
+10. Reporting, recovery, performance, and deployment hardening.
+
+Every UI-bearing slice in this sequence delivers complete functional UX at its own wave; accessibility is not deferred to final hardening. Wave 7, the penultimate wave, completes the final visual identity and polish: palette, typography pairing, illustration system, decorative composition, controlled glow and depth, expressive motion, and deliberate representative visual-regression baselines.
 
 The Wallet spike occurs before broad feature work because provider approval and update behavior are the largest external uncertainty.
 

@@ -19,6 +19,12 @@ The product uses one dark identity. It does not provide a light theme in MVP01.
 - Keep camera and manual-code paths together.
 - Preserve visible recovery after external or connectivity failure.
 
+## Delivery boundary
+
+Functional UX is continuous delivery work, not a final-polish phase. Every UI-bearing slice must ship with semantic structure, accessibility, basic responsive behavior, applicable loading, empty, error, success, and recovery states, all applicable security controls, and automated evidence. This boundary applies to public, private, organizer, and business surfaces; accessibility must not wait for final hardening.
+
+Wave 7, the penultimate wave, completes the final visual identity and polish: the final palette, typography pairing, illustration system, decorative composition, controlled glow and depth, expressive motion, and deliberate representative visual-regression baselines. Earlier slices may use restrained working presentation needed to make their UX complete, but they do not establish or defer the final visual system.
+
 ## Information architecture
 
 ```mermaid

@@ -134,15 +134,17 @@ Each item must identify its delivery wave, dependencies, acceptance evidence, an
 |---:|---|---|
 | 0 | Reproducible application and delivery baseline. | `REQ-TEC-001` to `REQ-TEC-005`, `REQ-TEC-007`, `REQ-MNT-001` to `REQ-MNT-004`, `REQ-SEC-005` |
 | 1 | Early evidence for the highest-risk Google Wallet integration. | Technical spike linked to `REQ-PAR-003` to `REQ-PAR-005` and [ADR 002](architecture/decisions/002-google-wallet-delivery-adapter.md); it does not close those requirements. |
-| 2 | Public product entry, discovery, and visual baseline. | `REQ-HOM-001`, `REQ-DIS-001` to `REQ-DIS-003`, `REQ-UX-001` to `REQ-UX-004`, `REQ-PER-001`, `REQ-TEC-006` |
+| 2 | Public product entry, discovery, and functional UX baseline. | `REQ-HOM-001`, `REQ-DIS-001` to `REQ-DIS-003`, `REQ-UX-001`, `REQ-UX-003`, `REQ-UX-004`, `REQ-PER-001`, `REQ-TEC-006` |
 | 3 | Organizer identity, workspace, and complete experience draft. | `REQ-ORG-001` to `REQ-ORG-003`, `REQ-ORG-007`, `REQ-EXP-001` to `REQ-EXP-004`, `REQ-SEC-001` to `REQ-SEC-004` |
 | 4 | Publication, public QR, participant invitation, and business access. | `REQ-ORG-004` to `REQ-ORG-006`, `REQ-DIS-004`, `REQ-BUS-001` to `REQ-BUS-006` |
 | 5 | Anonymous participation, private pass, and production Wallet card. | `REQ-PAR-001` to `REQ-PAR-006` |
 | 6 | Authorized visit validation and unordered progress. | `REQ-VIS-001` to `REQ-VIS-006`, `REQ-PER-002` |
-| 7 | Benefit allocation and authorized redemption. | `REQ-BEN-001` to `REQ-BEN-005`, `REQ-REL-001` |
+| 7 | Benefit allocation, authorized redemption, and final visual identity and polish. | `REQ-BEN-001` to `REQ-BEN-005`, `REQ-REL-001`, `REQ-UX-002` |
 | 8 | Reporting, audit, operational recovery, and release evidence. | `REQ-ANA-001`, `REQ-ANA-002`, `REQ-OPS-001`, `REQ-OPS-002`, `REQ-REL-002`, `REQ-OBS-001`, `REQ-TEC-008` |
 
 The register sequence supports lookup and does not define implementation order. The wave number controls dependency order and does not replace MoSCoW priority. An item can move to `Ready` only when its required upstream behavior exists or the item includes that behavior.
+
+**Sequencing rule:** Every UI-bearing slice delivers complete functional UX when it ships: semantic structure, accessibility, basic responsive behavior, applicable loading, empty, error, success, and recovery states, all applicable security controls, and automated evidence. Wave 7 adds the final palette, typography pairing, illustration system, decorative composition, controlled glow and depth, expressive motion, and deliberate representative visual-regression baselines; it does not defer accessibility or weaken earlier requirements.
 
 Wave 0 establishes the architecture baseline for `REQ-MNT-001` through `REQ-MNT-004` by accepting [ADR 001](architecture/decisions/001-modular-monolith-and-hexagonal-architecture.md) and documenting the dependency boundaries. These requirements remain cross-cutting constraints for every later product slice. Executable architecture checks begin when an owned module and concrete dependency boundary exist; Wave 0 does not add an analyzer, empty module scaffolding, or vacuous tests.
 
