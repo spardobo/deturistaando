@@ -13,18 +13,15 @@ This document defines the technical boundaries for the [MVP01 requirements](../r
 
 ## Architecture decision
 
-**DeTuristaAndo** uses a **modular monolith with hexagonal architecture**.
+**DeTuristaAndo** uses a **conventional Laravel monolith with use-case Actions**.
 
-Each business module separates these areas:
+Use conventional Laravel technical roots for real code, including `app/Actions`, `app/Models`, `app/Livewire`, `app/Http`, `app/Policies`, `app/Services`, `app/Integrations`, `app/Jobs`, `app/Events`, `app/Enums`, and `app/Data`. Product capability names may group real cohesive code within a technical root; they do not create formal modules, layers, or empty scaffolding.
 
-- **Domain:** entities, value objects, policies, and business rules.
-- **Application:** use cases, transaction coordination, and ports.
-- **Inbound adapters:** HTTP, Livewire, console commands, and queued jobs.
-- **Outbound adapters:** Eloquent persistence and external providers.
+A classified meaningful business command uses one project-owned `<Verb><Subject>Action::handle()`. An Action may coordinate authorization, its complete transaction, Eloquent, focused Services, and post-commit dispatch. Actions are a DeTuristaAndo convention, not an official Laravel or industry-wide standard. Routine writes, queries, framework callbacks, and mechanical wrappers use the clearest Laravel-native mechanism without an Action requirement.
 
-Dependencies point from adapters toward the application and domain. The architecture defines this direction. It does not require one interface, service, repository, or folder for every class.
+Use Eloquent or the query builder by default. Add a focused Service, repository, interface, contract, DTO, enum, value object, query, or capability directory only when a documented current responsibility or boundary justifies it. Keep provider SDK behavior in project-owned Integrations.
 
-See [ADR-001](decisions/001-modular-monolith-and-hexagonal-architecture.md).
+See [ADR-007](decisions/007-conventional-laravel-monolith-with-use-case-actions.md).
 
 ## System context
 
@@ -39,9 +36,9 @@ flowchart TB
 
 The Laravel application owns all product decisions. Providers deliver identity, messages, maps, media, or card projections.
 
-## Modules
+## Product capabilities
 
-| Module | Responsibility |
+| Capability | Responsibility |
 |---|---|
 | Organizer Identity | Fortify identity, Socialite linking, organizer profile, and session. |
 | Experience | Experience lifecycle, participants, goal, benefit definition, and publication readiness. |
@@ -51,9 +48,9 @@ The Laravel application owns all product decisions. Providers deliver identity, 
 | Visit and Progress | Confirmation eligibility, visit events, total visits, distinct progress, and goal transition. |
 | Benefit | Capacity reservation, entitlement, expiry, and redemption. |
 | Reporting and Audit | Product measures, business-own summary, audit events, and platform operations. |
-| Integrations | Wallet, mail, maps, storage, OAuth, and monitoring adapters. |
+| Integrations | Project-owned Wallet, mail, maps, storage, OAuth, and monitoring behavior. |
 
-Modules own their tables and domain behavior. Cross-module access occurs through application services, explicit queries, or domain events inside the same process. Do not query another module's tables from presentation code.
+Capabilities identify coherent product responsibilities; they do not require formal modules, separate layers, or matching folders. Use direct Eloquent, explicit queries, events, or focused Services when they are the clearest fit. Presentation code must not reach across unrelated capability data.
 
 ## Design principles
 
@@ -66,30 +63,31 @@ The project uses design principles as decision tools. It does not use them as ab
 | DRY | Extract one stable business rule or repeated source of knowledge. Keep incidental code similarity when extraction would hide intent. |
 | SOLID | Apply each principle where a real responsibility, substitution, interface, or dependency boundary exists. Do not measure compliance by the number of classes. |
 
-For SOLID, use one reason to change as the main responsibility test. Use narrow ports at volatile boundaries. Use dependency inversion for domain code that must not know Laravel presentation types, Eloquent details, or provider SDKs. Apply substitution and open extension rules only where more than one implementation or a credible change exists.
+For SOLID, use one reason to change as the main responsibility test. Add an abstraction only when a documented current responsibility or boundary needs it. Apply substitution and open extension rules only where a current implementation, test, or boundary need justifies them.
 
 ## Service and Repository policy
 
 | Pattern | Use | Do not use |
 |---|---|---|
-| Application Service | One named use case coordinates authorization, a transaction, domain behavior, and external work after commit. | A generic service that groups unrelated CRUD methods. |
-| Domain Service | A domain rule spans entities or value objects and has no natural entity owner. | Logic that belongs to an entity, value object, or application workflow. |
-| Repository | The domain or application needs an aggregate persistence boundary, a meaningful substitute, or isolated tests. | One repository per model, a generic base repository, or a wrapper around simple Eloquent CRUD. |
+| Focused Service | A reusable cohesive capability or composed read has a stable current responsibility. | A generic CRUD bucket, a capability-wide service, or a required Action-to-Service chain. |
+| Repository or interface | A documented current persistence, substitution, test, or boundary need is clearer than direct Laravel use. | One repository per model, a generic base repository, or a wrapper around simple Eloquent CRUD. |
+| Eloquent Model or query builder | Clear persistence, relationships, casts, scopes, cohesive local behavior, projections, aggregates, or bulk work. | A forced abstraction when direct Laravel use is clearer. |
 
-Use Eloquent or the query builder inside an outbound adapter for simple persistence and read projections. Keep visit, progress, entitlement, and redemption rules independent from Eloquent. Add a port only when it protects a current business rule, a provider boundary, or a verified test need.
+Use Eloquent or the query builder by default. Models may own relationships, casts, scopes, and cohesive local behavior. Add another abstraction only for a documented current responsibility or boundary; symmetry, generic CRUD, anticipated reuse, and future possibility do not qualify.
 
 ## Dependency rules
 
-- HTTP and Livewire components call application use cases.
-- Application use cases coordinate transactions and domain behavior.
-- Domain code does not import Livewire, Eloquent, or provider SDK types.
-- Simple read models and routine persistence can use Eloquent in an adapter without a repository port.
-- Provider adapters implement narrow project-owned ports when provider coupling crosses into the application.
-- Modules do not depend on a cyclic chain.
+- Livewire, HTTP handlers, console commands, jobs, and listeners use Laravel-native conventions; meaningful commands call an Action.
+- The classified Action owns the complete transaction for its command and may coordinate policies, Eloquent, Models, focused Services, and post-commit dispatch.
+- Routine reads and persistence use Eloquent or the query builder directly when that is clearest.
+- Provider SDK code, mapping, and provider error handling stay in project-owned Integrations.
+- Capabilities avoid cyclic coupling through clear current responsibilities, not formal layer rules.
 
-Use architecture tests for dependency direction and module isolation. Do not create an interface only to wrap one stable Laravel class.
+Do not create an interface only to wrap one stable Laravel class, and do not add architecture tests for this decision.
 
 ## Core transactions
+
+The classified Action owns each complete command transaction. When local product state is authoritative, dispatch the dependent provider effect after the transaction commits.
 
 | Use case | Transaction boundary | External effect |
 |---|---|---|
@@ -136,9 +134,9 @@ See [ADR-003](decisions/003-scoped-non-account-access.md) and the [security arch
 
 ## Google Wallet
 
-The Participation module owns card state. A Wallet port receives project data and maps it to Google Wallet classes, objects, signed links, and updates.
+The Participation capability owns card state. A project-owned Wallet Integration receives project data and maps it to Google Wallet classes, objects, signed links, and updates.
 
-The adapter must support:
+The Integration must support:
 
 - create or resolve the experience card class;
 - create one object per participation;
@@ -147,7 +145,7 @@ The adapter must support:
 - expose the validation QR and private-view link;
 - classify retryable and terminal provider errors.
 
-The private web view remains fully usable when Wallet delivery fails. See [ADR-002](decisions/002-google-wallet-delivery-adapter.md).
+The private web view remains fully usable when Wallet delivery fails. See [ADR-008](decisions/008-google-wallet-project-owned-integration.md).
 
 ## Other integrations
 
@@ -214,8 +212,10 @@ MVP01 does not use microservices, Kubernetes, event sourcing, CQRS infrastructur
 
 ## Decisions
 
-- [ADR-001: Modular monolith with hexagonal architecture](decisions/001-modular-monolith-and-hexagonal-architecture.md).
-- [ADR-002: Google Wallet outside the core domain](decisions/002-google-wallet-delivery-adapter.md).
+- [ADR-001: Modular monolith with hexagonal architecture](decisions/001-modular-monolith-and-hexagonal-architecture.md) — superseded by ADR-007; unchanged historical record.
+- [ADR-007: Conventional Laravel monolith with use-case Actions](decisions/007-conventional-laravel-monolith-with-use-case-actions.md) — current application architecture decision.
+- [ADR-002: Google Wallet outside the core domain](decisions/002-google-wallet-delivery-adapter.md) — superseded by ADR-008; unchanged historical record.
+- [ADR-008: Project-owned Google Wallet Integration](decisions/008-google-wallet-project-owned-integration.md) — current Google Wallet Integration decision.
 - [ADR-003: Organizer accounts and scoped non-account access](decisions/003-scoped-non-account-access.md).
 - [ADR-004: Official Laravel Livewire application stack](decisions/004-laravel-livewire-application-stack.md).
 - [ADR-005: Laravel Sail for development and an independent production image](decisions/005-sail-development-and-production-container.md).

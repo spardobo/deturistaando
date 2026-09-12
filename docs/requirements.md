@@ -90,10 +90,10 @@ Nine explicit MVP01 exclusions appear at the end of this document. They are scop
 | 54 | REQ-PER-002 | **Should** | PER | Performance | Complete validation within the initial latency target. |
 | 55 | REQ-REL-001 | **Must** | REL | Reliability | Preserve accepted transactions during provider failures. |
 | 56 | REQ-REL-002 | **Must** | REL | Reliability | Back up and restore production data within initial objectives. |
-| 57 | REQ-MNT-001 | **Must** | MNT | Maintainability | Use a modular monolith with hexagonal architecture. |
-| 58 | REQ-MNT-002 | **Must** | MNT | Maintainability | Keep domain rules independent from frameworks and SDKs. |
-| 59 | REQ-MNT-003 | **Must** | MNT | Maintainability | Isolate external providers behind narrow ports. |
-| 60 | REQ-MNT-004 | **Must** | MNT | Maintainability | Require a current reason for services, repositories, and interfaces. |
+| 57 | REQ-MNT-001 | **Must** | MNT | Maintainability | Organize real application code by current product capability within conventional Laravel roots. |
+| 58 | REQ-MNT-002 | **Must** | MNT | Maintainability | Keep consequential business rules cohesive, explicit, and testable with Laravel-native dependencies permitted. |
+| 59 | REQ-MNT-003 | **Must** | MNT | Maintainability | Keep external-provider implementation in project-owned Integrations. |
+| 60 | REQ-MNT-004 | **Must** | MNT | Maintainability | Require a documented current responsibility or boundary for added abstractions. |
 | 61 | REQ-OBS-001 | **Must** | OBS | Observability | Emit actionable production and audit information safely. |
 | 62 | REQ-TEC-001 | **Must** | TEC | Technical constraint | Use PHP 8.4 and Laravel 13. |
 | 63 | REQ-TEC-002 | **Must** | TEC | Technical constraint | Start from the official Laravel Livewire starter kit. |
@@ -133,7 +133,7 @@ Each item must identify its delivery wave, dependencies, acceptance evidence, an
 | Wave | Outcome | Primary requirements |
 |---:|---|---|
 | 0 | Reproducible application and delivery baseline. | `REQ-TEC-001` to `REQ-TEC-005`, `REQ-TEC-007`, `REQ-MNT-001` to `REQ-MNT-004`, `REQ-SEC-005` |
-| 1 | Early evidence for the highest-risk Google Wallet integration. | Technical spike linked to `REQ-PAR-003` to `REQ-PAR-005` and [ADR 002](architecture/decisions/002-google-wallet-delivery-adapter.md); it does not close those requirements. |
+| 1 | Early evidence for the highest-risk Google Wallet integration. | Technical spike linked to `REQ-PAR-003` to `REQ-PAR-005` and [ADR 008](architecture/decisions/008-google-wallet-project-owned-integration.md); ADR-002 is superseded history and the spike does not close those requirements. |
 | 2 | Public product entry, discovery, and functional UX baseline. | `REQ-HOM-001`, `REQ-DIS-001` to `REQ-DIS-003`, `REQ-UX-001`, `REQ-UX-003`, `REQ-UX-004`, `REQ-PER-001`, `REQ-TEC-006` |
 | 3 | Organizer identity, workspace, and complete experience draft. | `REQ-ORG-001` to `REQ-ORG-003`, `REQ-ORG-007`, `REQ-EXP-001` to `REQ-EXP-004`, `REQ-SEC-001` to `REQ-SEC-004` |
 | 4 | Publication, public QR, participant invitation, and business access. | `REQ-ORG-004` to `REQ-ORG-006`, `REQ-DIS-004`, `REQ-BUS-001` to `REQ-BUS-006` |
@@ -146,7 +146,7 @@ The register sequence supports lookup and does not define implementation order. 
 
 **Sequencing rule:** Every UI-bearing slice delivers complete functional UX when it ships: semantic structure, accessibility, basic responsive behavior, applicable loading, empty, error, success, and recovery states, all applicable security controls, and automated evidence. Wave 7 adds the final palette, typography pairing, illustration system, decorative composition, controlled glow and depth, expressive motion, and deliberate representative visual-regression baselines; it does not defer accessibility or weaken earlier requirements.
 
-Wave 0 establishes the architecture baseline for `REQ-MNT-001` through `REQ-MNT-004` by accepting [ADR 001](architecture/decisions/001-modular-monolith-and-hexagonal-architecture.md) and documenting the dependency boundaries. These requirements remain cross-cutting constraints for every later product slice. Executable architecture checks begin when an owned module and concrete dependency boundary exist; Wave 0 does not add an analyzer, empty module scaffolding, or vacuous tests.
+Wave 0 establishes the conventional Laravel monolith with use-case Actions baseline for `REQ-MNT-001` through `REQ-MNT-004`, as recorded by [ADR 007](architecture/decisions/007-conventional-laravel-monolith-with-use-case-actions.md). These requirements remain cross-cutting constraints for every later product slice. Wave 0 adds no source scaffolding or architecture tooling.
 
 Wave 0 installs Socialite and establishes the Google provider configuration contract for `REQ-TEC-003`. Wave 3 implements and verifies the organizer login callback and the safe identity-linking behavior required by `REQ-ORG-001` and `REQ-ORG-002`.
 
@@ -596,7 +596,7 @@ Wave 0 installs Socialite and establishes the Google provider configuration cont
 >
 > **Then** it does not publish the experience, issue a production Wallet card, or create a participation.
 
-**Verification:** Browser, QR payload, Wallet-adapter boundary, and domain-state tests.
+**Verification:** Browser, QR payload, Wallet Integration boundary/mapping behavior, and domain-state tests.
 
 ### Participating business
 
@@ -848,7 +848,7 @@ Wave 0 installs Socialite and establishes the Google provider configuration cont
 >
 > **Then** a valid card for that participation is available with the required information and links.
 
-**Verification:** Provider contract, sandbox, and Android device test.
+**Verification:** Provider API or Google Wallet mapping, sandbox, and Android-device evidence.
 
 #### REQ-PAR-004 — Synchronize Wallet state
 
@@ -872,7 +872,7 @@ Wave 0 installs Socialite and establishes the Google provider configuration cont
 >
 > **Then** the system requests the corresponding Wallet update after the commit.
 
-**Verification:** Provider adapter and queue integration test.
+**Verification:** Project-owned Google Wallet Integration and queue integration test.
 
 #### REQ-PAR-005 — Continue when Wallet fails
 
@@ -1646,101 +1646,101 @@ Wave 0 installs Socialite and establishes the Google provider configuration cont
 
 ### Maintainability and observability
 
-#### REQ-MNT-001 — Use the approved architecture
+#### REQ-MNT-001 — Organize code by current capability
 
 **Priority:** Must | **Type:** Maintainability | **Module:** Architecture | **Source:** RD
 
-**Description:** The application must use a modular monolith with hexagonal architecture and explicit business-module ownership.
+**Description:** Real application code must be organized by current product capability within conventional Laravel roots.
 
 **User Story**
 
 > **As** a MAINTAINER
 >
-> **I want** business behavior organized by module and inward dependencies
+> **I want** related product behavior easy to locate within Laravel conventions
 >
-> **So that** the product can evolve without unnecessary distributed-system cost.
+> **So that** the product can evolve without formal layers or distributed-system cost.
 
 **Acceptance criteria:**
 
 > **Given** that application code is added or changed
 >
-> **When** module ownership and dependencies are inspected
+> **When** its location and ownership are reviewed
 >
-> **Then** the change belongs to one defined module and adapters depend inward without cyclic module dependencies.
+> **Then** it uses the appropriate Laravel technical root and a capability grouping only when real cohesive code exists, and no empty capability or architecture-layer scaffold is added.
 
-**Verification:** Architecture review and dependency test.
+**Verification:** Architecture and documentation review.
 
-#### REQ-MNT-002 — Keep domain rules independent
+#### REQ-MNT-002 — Keep business rules clear and testable
 
 **Priority:** Must | **Type:** Maintainability | **Module:** Architecture | **Source:** RD, WS
 
-**Description:** Domain rules must remain independent from Livewire, Eloquent, and provider SDK objects.
+**Description:** Consequential business rules must remain cohesive, explicit, and testable with Laravel-native dependencies permitted.
 
 **User Story**
 
 > **As** a MAINTAINER
 >
-> **I want** critical domain rules independent from delivery and persistence frameworks
+> **I want** consequential rules expressed in focused code
 >
-> **So that** I can test and change adapters without rewriting business behavior.
+> **So that** I can verify and change behavior without mandatory framework-independent layers.
 
 **Acceptance criteria:**
 
-> **Given** that domain code implements experience, visit, progress, entitlement, or redemption rules
+> **Given** that experience, visit, progress, entitlement, or redemption behavior changes
 >
-> **When** its dependencies are inspected
+> **When** the implementation is reviewed
 >
-> **Then** no Livewire, Eloquent, or provider SDK type enters the domain boundary.
+> **Then** its rules are cohesive and covered by focused tests, and Eloquent and other Laravel facilities are permitted when they are the clearest fit.
 
-**Verification:** Automated architecture test.
+**Verification:** Focused unit or feature tests through Sail plus code review.
 
-#### REQ-MNT-003 — Isolate provider coupling
+#### REQ-MNT-003 — Isolate external-provider implementation
 
 **Priority:** Must | **Type:** Maintainability | **Module:** Architecture | **Source:** RD, WS
 
-**Description:** Wallet, mail, mapping, storage, OAuth, and monitoring must use narrow project-owned ports when provider coupling crosses into the application.
+**Description:** Provider SDK behavior must stay in project-owned Integrations.
 
 **User Story**
 
 > **As** a MAINTAINER
 >
-> **I want** volatile provider behavior isolated behind narrow ports
+> **I want** provider SDK behavior kept in project-owned integration classes
 >
-> **So that** external changes do not spread through product use cases.
+> **So that** provider changes do not spread through unrelated product code.
 
 **Acceptance criteria:**
 
-> **Given** that application behavior needs an external provider
+> **Given** that approved behavior uses an external provider
 >
-> **When** the dependency crosses the application boundary
+> **When** dependencies are reviewed
 >
-> **Then** the application uses a narrow project-owned contract and the concrete SDK remains in an adapter.
+> **Then** SDK-specific calls and mapping stay in a project-owned Integration, and an interface or contract exists only when a demonstrated current substitution, test, or boundary need is documented.
 
-**Verification:** Architecture and provider contract tests.
+**Verification:** Focused integration or feature tests and dependency review.
 
-#### REQ-MNT-004 — Justify abstractions and patterns
+#### REQ-MNT-004 — Justify abstractions by current responsibility
 
 **Priority:** Must | **Type:** Maintainability | **Module:** Architecture | **Source:** RD
 
-**Description:** Services, repositories, and interfaces must have a current use-case, domain, persistence, provider, or test justification. Generic repositories and one service per model are not required.
+**Description:** Added abstractions must have a documented current responsibility or boundary.
 
 **User Story**
 
 > **As** a MAINTAINER
 >
-> **I want** abstractions introduced only for current boundaries
+> **I want** abstractions introduced only when they clarify a current responsibility or boundary
 >
-> **So that** SOLID, DRY, KISS, and YAGNI improve the code instead of creating ceremony.
+> **So that** SOLID, DRY, KISS, and YAGNI improve the code without ceremony.
 
 **Acceptance criteria:**
 
-> **Given** that a change introduces a service, repository, or interface
+> **Given** that a change introduces a Service, repository, interface, contract, DTO, enum, value object, Query, or capability directory
 >
 > **When** the change is reviewed
 >
-> **Then** it identifies the current responsibility or dependency boundary and does not add a generic repository or speculative layer.
+> **Then** it documents the concrete current responsibility or boundary and why the smaller Laravel-native alternative is insufficient; symmetry, generic CRUD, anticipated reuse, or future possibility alone does not qualify. A justified abstraction outside these examples remains allowed.
 
-**Verification:** Architecture review against the active use case.
+**Verification:** Active-work-item evidence and code review.
 
 #### REQ-OBS-001 — Emit actionable operational evidence
 
