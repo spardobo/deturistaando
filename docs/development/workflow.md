@@ -221,6 +221,8 @@ GentleAI and coding agents can analyze, implement, test, and review. They do not
 - Run deterministic tools after every generated change.
 - Do not provide production secrets or unnecessary personal data.
 - Reject abstractions, dependencies, and scope that the active item does not require.
+- For project-owned Laravel work, apply the [Laravel application standard](laravel-application-standard.md).
+- Delegate its project skill by the exact path `../../skills/laravel-maintainable-implementation/SKILL.md`; inject that path, not a paraphrase or generated registry entry.
 
 ## CI/CD flow
 
