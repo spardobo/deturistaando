@@ -44,6 +44,12 @@ Run `npm run delivery:status -- --issue <N> --from <State> --to <State> [--pr <N
 
 The CLI checks approved unique Project items and Active WIP. Applying Ready, Active, or Done requires human `--confirm-human-gate`; Done attests integrated acceptance evidence. Review needs an open referenced PR; Verify needs a merged `main` PR with a closing reference. Chained intermediate PRs may support Review but cannot advance Verify. Blocked remains manual.
 
+### Starting the next item
+
+Load only coherent, near-term wave DraftIssues into Backlog after a human-approved dry-run; do not create distant speculative waves. Gentle inspects the current wave, dependency prose, Project order, blockers, and WIP, recommending one item only when unambiguous; otherwise it asks.
+
+Show the exact candidate and obtain human confirmation before `npm run delivery:start-next -- --item <PROJECT_ITEM_ID> --wave "Wave N" --apply --confirm-human-gate`. The command converts that same Project item into its durable repository issue, labels it approved, then verifies Backlog → Ready → Active; it never creates an independent issue to link later. Branch, commit, push, PR, and merge remain separately authorized handoffs.
+
 ## Work item
 
 Each item contains only the information required to implement and verify one outcome:
