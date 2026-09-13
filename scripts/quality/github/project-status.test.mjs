@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { runDeliveryStatus } from "../../github/project-status.mjs";
+import { runDeliveryStartNext, runDeliveryStatus } from "../../github/project-status.mjs";
 
 const repo = "spardobo/deturistaando";
 const states = ["Backlog", "Ready", "Active", "Review", "Verify", "Done", "Blocked"];
@@ -61,6 +61,92 @@ async function run(data, args) {
 
 const itemListsUseLimit = (data) =>
     data.calls.filter((args) => args[1] === "item-list").every((args) => args.includes("1000"));
+
+const waveField = () => ({
+    id: "WAVE",
+    name: "Wave",
+    type: "ProjectV2SingleSelectField",
+    options: [{ id: "W1", name: "Wave 1" }],
+});
+const draftItem = (extra = {}) => ({
+    id: "PD1",
+    content: { type: "DraftIssue", title: "Next slice", body: "Body" },
+    status: "Backlog",
+    wave: "Wave 1",
+    ...extra,
+});
+const startBase = (extra = {}) => ({
+    items: [draftItem()],
+    fields: [statusField(), waveField()],
+    repository: { id: "REPO", nameWithOwner: repo },
+    issue: {
+        number: 71,
+        url: "https://github.com/spardobo/deturistaando/issues/71",
+        labels: [],
+    },
+    conversions: 0,
+    labels: 0,
+    moves: 0,
+    ...extra,
+});
+const applyStart = ["--item", "PD1", "--wave", "Wave 1", "--apply", "--confirm-human-gate"];
+
+function fakeStart(data) {
+    return async (args) => {
+        data.calls ??= [];
+        data.calls.push(args);
+        const [group, command] = args;
+        if (group === "repo") return JSON.stringify(data.repository);
+        if (group === "issue" && command === "edit") {
+            if (data.labelFailure) throw new Error("label failed");
+            data.labels += 1;
+            data.issue.labels = [{ name: "status:approved" }];
+            return "";
+        }
+        if (group === "issue") return JSON.stringify(data.issue);
+        if (group === "api") {
+            data.conversions += 1;
+            if (data.conversionFailure) throw new Error("network failed");
+            data.items[0].content = {
+                ...data.items[0].content,
+                type: "Issue",
+                number: 71,
+                repository: repo,
+            };
+            return JSON.stringify({
+                data: { convertProjectV2DraftIssueItemToIssue: { item: { id: "PD1" } } },
+            });
+        }
+        if (group !== "project") throw new Error("Unexpected gh command");
+        if (command === "view") return JSON.stringify({ id: "PROJECT" });
+        if (command === "field-list") {
+            data.fieldReads = (data.fieldReads ?? 0) + 1;
+            if (data.fieldReads === 2) data.freshFieldHook?.(data);
+            return JSON.stringify({ fields: data.fields });
+        }
+        if (command === "item-list") {
+            data.itemReads = (data.itemReads ?? 0) + 1;
+            if (data.itemReads === 2) data.freshHook?.(data);
+            return JSON.stringify({ items: data.items, totalCount: data.items.length });
+        }
+        if (command === "item-edit") {
+            data.moves += 1;
+            if (data.moveFailure === data.moves) throw new Error("move failed");
+            data.items[0].status = args.at(-1);
+            return JSON.stringify({ id: "PD1" });
+        }
+        throw new Error("Unexpected project command");
+    };
+}
+
+async function runStart(data, args = ["--item", "PD1", "--wave", "Wave 1"]) {
+    const output = [];
+    const result = await runDeliveryStartNext(args, {
+        gh: fakeStart(data),
+        write: (line) => output.push(line),
+    });
+    return { result, output: output.join("\n") };
+}
 
 test("uses live field and item shapes, limits item reads, and reads back apply", async () => {
     const dry = base({ items: [item("Backlog"), item("Active", 42, "other/repo")] });
@@ -153,4 +239,110 @@ test("fails closed on stale Project readback", async () => {
         ),
         /readback/i,
     );
+});
+
+test("start-next dry-run is immutable and describes the bounded transaction", async () => {
+    const data = startBase();
+    const { result, output } = await runStart(data);
+    assert.equal(result.mode, "dry-run");
+    assert.equal(data.conversions, 0);
+    assert.equal(data.labels, 0);
+    assert.equal(data.moves, 0);
+    assert.match(
+        output,
+        /PD1[\s\S]*Wave 1[\s\S]*Backlog → Ready → Active[\s\S]*WIP=0[\s\S]*without creating a duplicate/,
+    );
+});
+
+test("start-next rejects invalid candidates, fields, WIP, and an absent human gate", async () => {
+    await assert.rejects(runDeliveryStartNext([]), /--item/);
+    for (const data of [
+        startBase({ items: [] }),
+        startBase({ items: [draftItem(), draftItem()] }),
+        startBase({
+            items: [draftItem({ content: { type: "Issue", title: "Next slice", body: "Body" } })],
+        }),
+        startBase({ items: [draftItem({ status: "Ready" })] }),
+        startBase({ items: [draftItem({ wave: "Wave 2" })] }),
+        startBase({ items: [draftItem(), draftItem({ id: "PD2", status: "Active" })] }),
+        startBase({ fields: [statusField(), waveField(), waveField()] }),
+    ])
+        await assert.rejects(runStart(data), /missing|DraftIssue|Backlog|Wave|WIP|ambiguous/i);
+    const data = startBase();
+    await assert.rejects(
+        runStart(data, ["--item", "PD1", "--wave", "Wave 1", "--apply"]),
+        /confirmation/i,
+    );
+    assert.equal(data.conversions, 0);
+});
+
+test("start-next rejects stale preconditions before conversion", async () => {
+    for (const freshHook of [
+        (data) => (data.items[0].content.body = "Changed"),
+        (data) => (data.repository.id = "OTHER"),
+    ]) {
+        const data = startBase({ freshHook });
+        await assert.rejects(runStart(data, applyStart), /stale/i);
+        assert.equal(data.conversions, 0);
+    }
+    const fields = startBase({
+        freshFieldHook: (data) => (data.fields[0].id = "OTHER-FIELD"),
+    });
+    await assert.rejects(runStart(fields, applyStart), /stale/i);
+    assert.equal(fields.conversions, 0);
+});
+
+test("start-next converts once, labels, and verifies Ready then Active", async () => {
+    const data = startBase();
+    const { result, output } = await runStart(data, applyStart);
+    assert.deepEqual(result, {
+        mode: "apply",
+        number: 71,
+        url: "https://github.com/spardobo/deturistaando/issues/71",
+        itemId: "PD1",
+    });
+    assert.equal(data.conversions, 1);
+    assert.equal(data.labels, 1);
+    assert.equal(data.moves, 2);
+    assert.equal(data.items[0].status, "Active");
+    assert.match(output, /Issue: #71[\s\S]*Readback: Active[\s\S]*separately authorized/);
+    assert.equal(
+        data.calls.some((args) => args[0] === "issue" && args[1] === "create"),
+        false,
+    );
+    assert.match(
+        data.calls.find((args) => args[0] === "api").join(" "),
+        /convertProjectV2DraftIssueItemToIssue/,
+    );
+});
+
+test("start-next stops with the completed stage after indeterminate or partial failures", async () => {
+    for (const scenario of [
+        {
+            data: startBase({ conversionFailure: true }),
+            error: /indeterminate[\s\S]*inspect Project item PD1/i,
+            counts: [1, 0, 0],
+        },
+        {
+            data: startBase({ labelFailure: true }),
+            error: /after conversion for issue #71/i,
+            counts: [1, 0, 0],
+        },
+        {
+            data: startBase({ moveFailure: 1 }),
+            error: /after label for issue #71/i,
+            counts: [1, 1, 1],
+        },
+        {
+            data: startBase({ moveFailure: 2 }),
+            error: /after Ready for issue #71/i,
+            counts: [1, 1, 2],
+        },
+    ]) {
+        await assert.rejects(runStart(scenario.data, applyStart), scenario.error);
+        assert.deepEqual(
+            [scenario.data.conversions, scenario.data.labels, scenario.data.moves],
+            scenario.counts,
+        );
+    }
 });
