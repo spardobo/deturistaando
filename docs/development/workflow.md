@@ -108,7 +108,7 @@ Every UI-bearing slice in this sequence delivers complete functional UX at its o
 
 The Wallet spike occurs before broad feature work because provider approval and update behavior are the largest external uncertainty.
 
-Wave 0 establishes the modular-monolith and hexagonal decisions without creating speculative modules or adding a standalone architecture analyzer. Each product slice applies those boundaries to its real code. Executable architecture checks join the quality gates only when an owned module and concrete dependency rule make the evidence meaningful.
+Wave 0 establishes the [conventional Laravel monolith with use-case Actions](../architecture/decisions/007-conventional-laravel-monolith-with-use-case-actions.md) without creating source scaffolding or architecture tooling. Each product slice applies that decision to real code and verifies maintainability through focused review and tests.
 
 ## Local development environment
 

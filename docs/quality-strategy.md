@@ -18,9 +18,9 @@ This document defines the evidence required to release the [MVP01 requirements](
 |---|---|---|
 | Unit and domain | `K/N`, repeated visits, entitlement, capacity, expiry, and state transitions. | During development and CI. |
 | Feature | Laravel routes, Livewire actions, policies, validation, and audit behavior. | During development and CI. |
-| Architecture | Module ownership and inward dependency direction. | Deferred; CI after owned modules and rules exist. |
-| Integration | PostgreSQL constraints, transactions, OAuth linking, queues, storage, and provider adapters. | CI with real PostgreSQL and faked external providers. |
-| Contract | Project-owned ports and Google Wallet mapping/error classification. | CI; selected provider sandbox checks before release. |
+| Architecture | Conventional Laravel responsibilities, Action boundaries, transaction ownership, and documented abstraction justifications. | Focused review and behavior tests during development and CI. |
+| Integration | PostgreSQL constraints, transactions, OAuth linking, queues, storage, and project-owned Integration behavior. | CI with real PostgreSQL, Laravel fakes, and focused Integration behavior tests. |
+| Contract | Project-owned Google Wallet Integration mapping and error classification. | Focused mapping/error tests; selected provider sandbox checks before release. |
 | Browser | Critical visitor, organizer, and business journeys. | Deferred; pull request and staging after complete owned journeys exist. |
 | Operational | Backup restore, deployment, health, and rollback. | Before production release and after material infrastructure change. |
 
@@ -68,7 +68,7 @@ Coverage follows a `100/80/0` risk model adapted to the Laravel application.
 | Tier | Scope | Initial target |
 |---|---|---|
 | Core | Visit, distinct progress, entitlement, capacity, redemption, credential scope, and authorization rules. | `100%` of identified rules have direct automated tests. |
-| Important | Owned application services, Livewire workflows, and provider adapters. | `80%+` line coverage where measurement is stable and useful. |
+| Important | Owned application services, Livewire workflows, and provider Integrations. | `80%+` line coverage where measurement is stable and useful. |
 | Infrastructure | Framework bootstrap, generated files, configuration-only code, and vendor packages. | No coverage target. |
 
 Do not use one global percentage to justify low-value tests. Review uncovered branches in changed core code. Keep the main branch at `100%` test success with zero accepted flaky tests.
