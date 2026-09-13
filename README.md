@@ -203,7 +203,7 @@ Las [guías UI/UX](docs/ui-ux-guidelines.md) definen la dirección visual sin co
 | Interfaz | Blade, Livewire 4, Alpine.js, Tailwind CSS 4 y Flux UI Free. |
 | Datos | PostgreSQL 16. |
 | Mapas | Leaflet y datos de OpenStreetMap. |
-| Tarjeta | Google Wallet mediante un adaptador propio. |
+| Tarjeta | Google Wallet mediante una Integración propia del proyecto, según [ADR-008](docs/architecture/decisions/008-google-wallet-project-owned-integration.md). |
 | Pruebas | Pest o PHPUnit y Playwright. |
 | Desarrollo | Laravel Sail con la aplicación, PostgreSQL, correo y dependencias locales en contenedores. |
 | Producción | Dockerfile propio en la raíz y entrega mediante GitHub Actions. |
@@ -213,7 +213,7 @@ El starter kit aporta autenticación, recuperación de acceso, verificación de 
 
 Docker es la única dependencia obligatoria del host para desarrollar. Los comandos de PHP, Composer, Node y pruebas se ejecutan mediante Sail. Producción no reutiliza Sail: se construye desde el Dockerfile de la raíz y el item dedicado de CI deberá verificar esa imagen antes de promoverla.
 
-La aplicación será un **monolito modular con arquitectura hexagonal**. Cada módulo separará dominio, casos de uso y adaptadores. DRY, KISS, YAGNI y SOLID se aplicarán donde reduzcan repetición, complejidad o acoplamiento; no como una obligación de crear capas o interfaces. Los patrones Service y Repository se usarán cuando exista una operación de negocio o una frontera de persistencia que los justifique.
+La aplicación será un **monolito Laravel convencional con Actions de caso de uso**, según [ADR-007](docs/architecture/decisions/007-conventional-laravel-monolith-with-use-case-actions.md). Los comandos de negocio significativos se coordinarán con Actions; Eloquent será la opción predeterminada, y los Services focalizados u otras abstracciones se incorporarán solo cuando exista una necesidad actual demostrada. DRY, KISS, YAGNI y SOLID se aplicarán de forma proporcional.
 
 Laravel cubrirá los controles web habituales. La aplicación añadirá autorización por alcance, separación de credenciales, idempotencia, auditoría y límites de intentos donde el dominio lo requiera. La documentación de [arquitectura](docs/architecture/overview.md) y [seguridad](docs/architecture/security.md) explica estas decisiones.
 
@@ -228,6 +228,7 @@ La documentación avanza desde el producto hacia la implementación. Cada archiv
 5. [Arquitectura](docs/architecture/overview.md), [seguridad](docs/architecture/security.md) y ADR relacionados.
 6. [Estrategia de calidad](docs/quality-strategy.md).
 7. [Flujo de desarrollo](docs/development/workflow.md).
+8. [Estándar de implementación Laravel](docs/development/laravel-application-standard.md).
 
 El [estándar de documentación](docs/documentation-standard.md) define autoridad, estilo y mantenimiento.
 
