@@ -38,6 +38,12 @@ WIP limit is one item in `Active` for the primary developer. A blocked item does
 
 The actor delivering the work owns these state transitions. This assigns operational responsibility without fixing it to one named person, so the workflow remains valid as the team changes.
 
+### Guarded Project status updates
+
+Run `npm run delivery:status -- --issue <N> --from <State> --to <State> [--pr <N>] [--apply] [--confirm-human-gate]`. It is dry-run by default; only `--apply` mutates GitHub.
+
+The CLI checks approved unique Project items and Active WIP. Applying Ready, Active, or Done requires human `--confirm-human-gate`; Done attests integrated acceptance evidence. Review needs an open referenced PR; Verify needs a merged `main` PR with a closing reference. Chained intermediate PRs may support Review but cannot advance Verify. Blocked remains manual.
+
 ## Work item
 
 Each item contains only the information required to implement and verify one outcome:

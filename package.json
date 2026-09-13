@@ -5,6 +5,7 @@
     "scripts": {
         "dev": "vp dev",
         "build": "vp build",
+        "delivery:status": "node scripts/github/project-status.mjs",
         "format": "vp fmt resources/js scripts/quality playwright.config.js vite.config.js --write",
 
         "check:format": "vp fmt resources/js scripts/quality playwright.config.js vite.config.js --check",
@@ -14,6 +15,7 @@
 
         "test": "node --test \"scripts/quality/**/*.test.mjs\"",
         "test:documentation-validator": "node --test scripts/quality/documentation/validate-documentation.test.mjs",
+        "test:delivery-status": "node --test scripts/quality/github/project-status.test.mjs",
         "test:e2e": "playwright test",
         "test:e2e:list": "playwright test --list",
 
