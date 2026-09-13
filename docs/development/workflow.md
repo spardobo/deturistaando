@@ -44,6 +44,8 @@ Run `npm run delivery:status -- --issue <N> --from <State> --to <State> [--pr <N
 
 The CLI checks approved unique Project items and Active WIP. Applying Ready, Active, or Done requires human `--confirm-human-gate`; Done attests integrated acceptance evidence. Review needs an open referenced PR; Verify needs a merged `main` PR with a closing reference. Chained intermediate PRs may support Review but cannot advance Verify. Blocked remains manual.
 
+Before a human merge, run `npm run delivery:pr-status -- --pr <N> --issue <N> --role <intermediate|final>`. It is read-only and fails closed unless the repository, approved issue, PR policy, required checks, clean GitHub merge state, and a 400-line review budget are verified. No size exception route is configured.
+
 ### Starting the next item
 
 Load only coherent, near-term wave DraftIssues into Backlog after a human-approved dry-run; do not create distant speculative waves. Gentle inspects the current wave, dependency prose, Project order, blockers, and WIP, recommending one item only when unambiguous; otherwise it asks.

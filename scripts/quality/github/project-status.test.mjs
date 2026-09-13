@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { runDeliveryStartNext, runDeliveryStatus } from "../../github/project-status.mjs";
+import {
+    runDeliveryPrStatus,
+    runDeliveryStartNext,
+    runDeliveryStatus,
+} from "../../github/project-status.mjs";
 
 const repo = "spardobo/deturistaando";
 const states = ["Backlog", "Ready", "Active", "Review", "Verify", "Done", "Blocked"];
@@ -147,6 +151,161 @@ async function runStart(data, args = ["--item", "PD1", "--wave", "Wave 1"]) {
     });
     return { result, output: output.join("\n") };
 }
+
+const readinessBase = (extra = {}) => ({
+    repository: { id: "REPO", nameWithOwner: repo },
+    issue: { id: "I1", number: 42, labels: [{ name: "status:approved" }] },
+    pr: {
+        number: 7,
+        state: "OPEN",
+        isDraft: false,
+        baseRefName: "main",
+        body: "Refs #42",
+        labels: [{ name: "type:feat" }],
+        statusCheckRollup: [
+            { name: "policy", conclusion: "SUCCESS" },
+            { name: "quality", conclusion: "SUCCESS" },
+        ],
+        mergeable: "MERGEABLE",
+        mergeStateStatus: "CLEAN",
+        additions: 240,
+        deletions: 100,
+    },
+    ...extra,
+});
+
+function fakePrStatus(data) {
+    return async (args) => {
+        data.calls ??= [];
+        data.calls.push(args);
+        const [group, command] = args;
+        if (data.malformed && group === data.malformed) return "{";
+        if (group === "repo" && command === "view") return JSON.stringify(data.repository);
+        if (group === "issue" && command === "view") return JSON.stringify(data.issue);
+        if (group === "pr" && command === "view") return JSON.stringify(data.pr);
+        throw new Error("Unexpected gh command");
+    };
+}
+
+async function runPrStatus(data, args = ["--pr", "7", "--issue", "42", "--role", "intermediate"]) {
+    const output = [];
+    const result = await runDeliveryPrStatus(args, {
+        gh: fakePrStatus(data),
+        write: (line) => output.push(line),
+    });
+    return { result, output: output.join("\n") };
+}
+
+test("PR readiness accepts bounded intermediate and final evidence without mutations", async () => {
+    const intermediate = readinessBase({
+        pr: {
+            ...readinessBase().pr,
+            statusCheckRollup: [
+                { name: "policy", conclusion: "FAILURE" },
+                { name: "policy", conclusion: "SUCCESS" },
+                { name: "quality", state: "SUCCESS" },
+            ],
+        },
+    });
+    const result = await runPrStatus(intermediate);
+    assert.deepEqual(result.result, { readiness: "ready" });
+    assert.match(
+        result.output,
+        /Mode: read-only[\s\S]*PR: #7[\s\S]*Issue approved: #42[\s\S]*Role: intermediate[\s\S]*Base: main[\s\S]*Type: type:feat[\s\S]*Checks: policy, quality[\s\S]*Merge: MERGEABLE\/CLEAN[\s\S]*Review budget: 340\/400[\s\S]*Readiness: ready/,
+    );
+    assert.deepEqual(
+        intermediate.calls.map((args) => args.slice(0, 2)),
+        [
+            ["repo", "view"],
+            ["issue", "view"],
+            ["pr", "view"],
+        ],
+    );
+
+    const final = readinessBase({ pr: { ...readinessBase().pr, body: "Closes: #42" } });
+    assert.equal(
+        (await runPrStatus(final, ["--pr", "7", "--issue", "42", "--role", "final"])).result
+            .readiness,
+        "ready",
+    );
+});
+
+test("PR readiness fails closed on arguments, repository, issue, and malformed evidence", async () => {
+    await assert.rejects(runDeliveryPrStatus([]), /--pr/);
+    await assert.rejects(
+        runDeliveryPrStatus(["--pr", "7", "--issue", "42", "--role", "final", "--apply"]),
+        /Unknown/,
+    );
+    for (const data of [
+        readinessBase({ repository: { id: "REPO", nameWithOwner: "other/repo" } }),
+        readinessBase({ issue: { id: "I1", number: 43, labels: [{ name: "status:approved" }] } }),
+        readinessBase({ issue: { id: "I1", number: 42, labels: [] } }),
+        readinessBase({ malformed: "repo" }),
+    ])
+        await assert.rejects(runPrStatus(data), /identity|Issue|malformed/i);
+});
+
+test("PR readiness accepts role-specific references only", async () => {
+    for (const body of ["Closes #42", "Fixes #42", "Resolves #42"])
+        await assert.rejects(
+            runPrStatus(readinessBase({ pr: { ...readinessBase().pr, body } })),
+            /reference/i,
+        );
+    for (const body of ["Refs #42", "References #42", "Part of #42"])
+        await assert.rejects(
+            runPrStatus(readinessBase({ pr: { ...readinessBase().pr, body } }), [
+                "--pr",
+                "7",
+                "--issue",
+                "42",
+                "--role",
+                "final",
+            ]),
+            /reference/i,
+        );
+});
+
+test("PR readiness rejects invalid PR policy evidence", async () => {
+    const invalid = (pr) => readinessBase({ pr: { ...readinessBase().pr, ...pr } });
+    for (const data of [
+        invalid({ number: 8 }),
+        invalid({ state: "CLOSED" }),
+        invalid({ isDraft: true }),
+        invalid({ baseRefName: "release" }),
+        invalid({ body: "Refs #43" }),
+        invalid({ labels: [] }),
+        invalid({ labels: [{ name: "type:feat" }, { name: "type:fix" }] }),
+        invalid({ statusCheckRollup: [{ name: "policy", conclusion: "SUCCESS" }] }),
+        invalid({
+            statusCheckRollup: [
+                { name: "policy", conclusion: "SUCCESS" },
+                { name: "quality", conclusion: "FAILURE" },
+            ],
+        }),
+        invalid({ mergeable: "CONFLICTING" }),
+        invalid({ mergeStateStatus: "BLOCKED" }),
+        invalid({ additions: -1 }),
+        invalid({ deletions: "100" }),
+        invalid({ additions: 401, deletions: 0 }),
+        invalid({
+            additions: 401,
+            deletions: 0,
+            labels: [{ name: "type:feat" }, { name: "size:exception" }],
+        }),
+    ])
+        await assert.rejects(runPrStatus(data), /PR|check|merge/i);
+    await assert.rejects(
+        runPrStatus(invalid({ body: "References #42" }), [
+            "--pr",
+            "7",
+            "--issue",
+            "42",
+            "--role",
+            "final",
+        ]),
+        /reference/i,
+    );
+});
 
 test("uses live field and item shapes, limits item reads, and reads back apply", async () => {
     const dry = base({ items: [item("Backlog"), item("Active", 42, "other/repo")] });
