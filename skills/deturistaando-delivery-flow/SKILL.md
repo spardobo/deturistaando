@@ -1,40 +1,64 @@
 ---
 name: deturistaando-delivery-flow
-description: "Trigger: DeTuristaAndo delivery status, start next item, Project transition, delivery flow. Orchestrate guarded Project transitions with the local CLI."
+description: "Trigger: DeTuristaAndo delivery flow, Project status, waves, PR handoffs, or next work selection."
 license: Apache-2.0
 metadata:
   author: gentleman-programming
-  version: "1.0"
+  version: "2.0"
 ---
 
 ## Activation Contract
-Use for DeTuristaAndo Project #2 delivery transitions and `start-next`; do not use for generic Project administration.
+Use for DeTuristaAndo delivery flow, GitHub Project movement, PR handoffs, and rolling-wave planning. Do not use for generic Project administration.
 
-## Hard Rules
-- The local delivery CLI is the sole authority for Project reads and mutations. Never compose direct `gh project` transitions or DraftIssue conversion.
-- Obtain separate human authorization for Project mutation, branch, commit, push, PR, merge, and Done. A dry-run authorizes none.
-- Load only a coherent near-term DraftIssue wave into Backlog after a human-approved dry-run; do not create speculative waves.
-- `start-next` conversion retains the Project item and creates its durable repository issue. Do not create or link a separate issue afterward.
-- Local policy overrides generic guidance: use `Refs #<issue>` for intermediate PR work; use `Closes #<issue>` only in the final merged PR.
+## Normal Board Flow
+Use this Lean sequence:
 
-## Decision Gates
-| Situation | Action |
-| --- | --- |
-| Candidate is ambiguous, blocked, or WIP is active | Stop and ask; do not mutate. |
-| `start-next` conversion succeeded | Do not invoke `gentle-ai-issue-creation`; use the returned issue. |
-| Implementation work | Hand off to `gentle-ai-work-unit-commits` only for commits, after commit authorization. |
-| PR stage | Hand off to `gentle-ai-branch-pr` only for branch/PR work, after respective authorization; use `delivery:pr-status` before requesting merge. |
-| User requests stacked PRs or change risks >400 lines | Hand off to `gentle-ai-chained-pr`. |
-| Ready, Active, or Done transition | Require Project-mutation authorization and `--confirm-human-gate`; Done additionally requires acceptance evidence. |
+`Backlog → Active → Review → Verify → Done`
 
-## Execution Steps
-1. For a normal status transition, run `npm run delivery:status -- --issue <N> --from <FROM> --to <TO>`; report its evidence. After explicit Project-mutation authorization, run `npm run delivery:status -- --issue <N> --from <FROM> --to <TO> --apply --confirm-human-gate`. Use only supported sequence transitions: Backlog→Ready→Active→Review→Verify→Done. Supply `--pr <N>` for Active→Review and Review→Verify.
-2. For next work, run `npm run delivery:start-next -- --item <PROJECT_ITEM_ID> --wave "Wave N"`; report the selected item and checks. After explicit Project-mutation authorization, run `npm run delivery:start-next -- --item <PROJECT_ITEM_ID> --wave "Wave N" --apply --confirm-human-gate`; use its conversion and readback.
-3. Before requesting merge, run `npm run delivery:pr-status -- --pr <N> --issue <N> --role <intermediate|final>`; stop unless its read-only report says `Readiness: ready`.
-4. Read `docs/development/workflow.md` only on demand for DoR/DoD, broad policy, or ambiguity; do not read it for routine transitions.
+- `Backlog`: scoped work available for the current or next coherent wave.
+- `Active`: one primary item being implemented. Keep WIP at one.
+- `Review`: the PR is open; code review, CI, and policy checks are addressed here.
+- `Verify`: the PR is merged to `main`; integrated verification is underway or recorded.
+- `Done`: the human accepted the result and sufficient evidence exists.
+
+`Ready` is not part of the normal flow. If an old Project item still uses it, treat it as transitional legacy state and ask before moving it.
+
+## Routine Playbook
+1. Select one clear Backlog item from the current wave; ask if WIP is already Active or selection is ambiguous.
+2. When starting a Project DraftIssue, convert that same Project item into a repository issue before moving it to Active. Do not create a duplicate issue and link it later.
+3. If the Backlog item is already a repository issue, use that issue directly.
+4. Request explicit human authorization before Project conversion/status movement, branch creation, commit, push, PR creation, merge, and Done/acceptance.
+5. During Active, run the smallest checks that prove the changed behavior. Do not repeat broad checks unless code changed or a failure explains why.
+6. Move to Review when a focused PR exists and references the issue.
+7. Move to Verify only after the final PR is merged to `main`.
+8. Move to Done only after integrated verification and human acceptance.
+
+## Waves and Lazy Loading
+Waves are rolling planning horizons, not extra ceremony.
+
+- Keep Backlog limited to the current coherent wave and the immediate next work needed to maintain flow.
+- When every item in a wave is Done, plan/load the next wave from `docs/requirements.md`.
+- Do not eagerly read broad documentation during routine board or PR operations.
+- Lazy-load `docs/requirements.md` only for wave completion, next-wave planning, ambiguity, scope validation, or acceptance questions.
+- Lazy-load `docs/development/workflow.md`, architecture decisions, quality strategy, or requirement detail only when the current risk or decision needs them.
+- Do not create speculative distant waves.
+
+## PR and Merge Rules
+- Keep PRs small, focused, and tied to one outcome.
+- Use `Refs #<issue>` for intermediate PRs in an intentional chain.
+- Use `Closes #<issue>`, `Fixes #<issue>`, or `Resolves #<issue>` for the final PR.
+- If the work risks exceeding a comfortable review size, split before opening the PR.
+- Review and Verify remain distinct: open PR versus merged integrated result.
+
+## Stop Conditions
+Stop and ask instead of inferring when:
+
+- scope, requirement traceability, or acceptance is unclear;
+- WIP is already Active;
+- CI fails without an obvious local fix;
+- merge conflicts, provider access, security, data migration, or deployment risk appears;
+- Project state disagrees with issue or PR state;
+- the next wave cannot be derived cleanly from requirements.
 
 ## Output Contract
-Return dry-run or PR-readiness evidence, exact authorization received, apply readback, any handoff, and unresolved blockers or risks.
-
-## References
-- `../../docs/development/workflow.md` (on demand only)
+Report only what matters: current state, evidence observed, human authorization received, next action, and unresolved blockers or risks.

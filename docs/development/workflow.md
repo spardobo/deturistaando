@@ -7,16 +7,16 @@ This document defines a Lean delivery flow for **DeTuristaAndo**. Work is refine
 - Use Kanban and continuous flow instead of fixed-scope sprints.
 - Limit active implementation to one primary work item.
 - Deliver vertical slices that produce an observable outcome and complete functional UX for every UI-bearing surface.
-- Refine only the next ready items.
+- Plan in rolling, near-term waves; when a wave completes, load the next coherent wave from the authoritative requirements.
 - Integrate frequently through short-lived branches.
 - Keep documentation and code in the same change when they describe the same behavior.
+- Do not eagerly load broad documentation for routine board operations. Read [requirements](../requirements.md) for wave completion or next-wave planning, ambiguity, scope validation, or acceptance questions; load workflow, architecture, and quality documentation only when relevant.
 
 ## Board
 
 ```mermaid
 flowchart LR
-    BACKLOG["Backlog"] --> READY["Ready"]
-    READY --> ACTIVE["Active"]
+    BACKLOG["Backlog"] --> ACTIVE["Active"]
     ACTIVE --> REVIEW["Review"]
     REVIEW --> VERIFY["Verify"]
     VERIFY --> DONE["Done"]
@@ -26,11 +26,10 @@ flowchart LR
 
 | State | Entry rule | Exit rule |
 |---|---|---|
-| Backlog | Valuable idea or identified defect. | Scope and priority are clear enough to refine. |
-| Ready | Meets Definition of Ready. | Development starts and WIP is available. |
-| Active | The delivering actor moves the item when implementation begins. | Complete local evidence, open the pull request, and move the item to `Review`. |
-| Review | The pull request is open, focused, and self-reviewed. | Merge after required checks pass, then move the item to `Verify`. |
-| Verify | The change is merged into `main`; the delivering actor verifies the integrated result and acceptance evidence. | Move to `Done` only after the required evidence passes. |
+| Backlog | Valuable idea or identified defect. | Scope and priority are clear enough to start when WIP is available. |
+| Active | The delivering actor begins implementation with one active item. | Complete local evidence, open the pull request, and move the item to `Review`. |
+| Review | The pull request is open, focused, reviewed, and its required checks are addressed. | Merge after the required checks pass, then move the item to `Verify`. |
+| Verify | The change is merged into `main`; the delivering actor verifies the integrated result and acceptance evidence. | Move to `Done` only after human acceptance and the required evidence pass. |
 | Done | Acceptance evidence exists, required checks passed, and documentation is current. | Reopen only for a new defect or changed requirement. |
 | Blocked | An external decision, access restriction, provider dependency, or defect actually prevents progress; record the blocker and next action. | Resolve the blocker and return the item to its prior actionable state. |
 
@@ -38,19 +37,11 @@ WIP limit is one item in `Active` for the primary developer. A blocked item does
 
 The actor delivering the work owns these state transitions. This assigns operational responsibility without fixing it to one named person, so the workflow remains valid as the team changes.
 
-### Guarded Project status updates
+### Operating the board
 
-Run `npm run delivery:status -- --issue <N> --from <State> --to <State> [--pr <N>] [--apply] [--confirm-human-gate]`. It is dry-run by default; only `--apply` mutates GitHub.
+Use the normal sequence `Backlog → Active → Review → Verify → Done`. Keep one item in `Active`; a blocked item does not justify starting unrelated work. `Review` is the open PR review and checks stage. `Verify` starts only after merge to `main` and records integrated verification. Exceptions, ambiguous scope, missing evidence, or dependencies stop the flow for a human decision.
 
-The CLI checks approved unique Project items and Active WIP. Applying Ready, Active, or Done requires human `--confirm-human-gate`; Done attests integrated acceptance evidence. Review needs an open referenced PR; Verify needs a merged `main` PR with a closing reference. Chained intermediate PRs may support Review but cannot advance Verify. Blocked remains manual.
-
-Before a human merge, run `npm run delivery:pr-status -- --pr <N> --issue <N> --role <intermediate|final>`. It is read-only and fails closed unless the repository, approved issue, PR policy, required checks, clean GitHub merge state, and a 400-line review budget are verified. No size exception route is configured.
-
-### Starting the next item
-
-Load only coherent, near-term wave DraftIssues into Backlog after a human-approved dry-run; do not create distant speculative waves. Gentle inspects the current wave, dependency prose, Project order, blockers, and WIP, recommending one item only when unambiguous; otherwise it asks.
-
-Show the exact candidate and obtain human confirmation before `npm run delivery:start-next -- --item <PROJECT_ITEM_ID> --wave "Wave N" --apply --confirm-human-gate`. The command converts that same Project item into its durable repository issue, labels it approved, then verifies Backlog → Ready → Active; it never creates an independent issue to link later. Branch, commit, push, PR, and merge remain separately authorized handoffs.
+Waves are rolling planning horizons, not a second board state. Keep only coherent near-term work in `Backlog`. When a wave completes, use the authoritative requirements to select and load the next wave; do not create speculative distant waves. Branch creation, commits, pushes, PRs, merges, and `Done` remain separate human-authorized gates. Run focused checks for the change and repeat them only after a relevant change or observed failure.
 
 ## Work item
 
@@ -68,18 +59,18 @@ Do not copy full requirements or architecture sections into the item. Link to th
 
 Use an outcome-oriented title with at most one primary requirement ID, such as `[REQ-HOM-001] Present the product home page`. Never concatenate several requirement IDs in a title. Record the primary, related, and cross-cutting requirement IDs in the item body so the title remains readable. Maintenance and documentation items that do not implement an authoritative requirement do not need a fabricated requirement prefix.
 
-A draft must become a repository issue before it enters `Active`. The issue is the durable unit linked to its branch, pull request, checks, and resulting commit.
+A Backlog DraftIssue is converted into a repository issue as part of starting work. The same Project item remains the Kanban card; do not create a duplicate issue and link it later. If the item is already a repository issue, use it directly. The issue is the durable unit linked to its branch, pull request, checks, and resulting commit.
 
-## Definition of Ready
+## Starting criteria
 
-An item is ready when:
+An item can move from `Backlog` to `Active` when:
 
-- the outcome and owner are clear;
-- upstream product and domain terms exist;
-- dependencies and external access are known;
+- the outcome and owner are clear enough to start;
+- required upstream behavior exists or the item includes it;
+- dependencies and external access are known or explicitly accepted as discovery risk;
 - acceptance can be verified;
 - the item fits one reviewable pull request or has a safe split;
-- unresolved decisions that change the solution are closed.
+- unresolved decisions that would change the solution are closed.
 
 ## Definition of Done
 
