@@ -23,17 +23,18 @@ Use for DeTuristaAndo Project #2 delivery transitions and `start-next`; do not u
 | Candidate is ambiguous, blocked, or WIP is active | Stop and ask; do not mutate. |
 | `start-next` conversion succeeded | Do not invoke `gentle-ai-issue-creation`; use the returned issue. |
 | Implementation work | Hand off to `gentle-ai-work-unit-commits` only for commits, after commit authorization. |
-| PR stage | Hand off to `gentle-ai-branch-pr` only for branch/PR work, after respective authorization. |
+| PR stage | Hand off to `gentle-ai-branch-pr` only for branch/PR work, after respective authorization; use `delivery:pr-status` before requesting merge. |
 | User requests stacked PRs or change risks >400 lines | Hand off to `gentle-ai-chained-pr`. |
 | Ready, Active, or Done transition | Require Project-mutation authorization and `--confirm-human-gate`; Done additionally requires acceptance evidence. |
 
 ## Execution Steps
 1. For a normal status transition, run `npm run delivery:status -- --issue <N> --from <FROM> --to <TO>`; report its evidence. After explicit Project-mutation authorization, run `npm run delivery:status -- --issue <N> --from <FROM> --to <TO> --apply --confirm-human-gate`. Use only supported sequence transitions: Backlog→Ready→Active→Review→Verify→Done. Supply `--pr <N>` for Active→Review and Review→Verify.
 2. For next work, run `npm run delivery:start-next -- --item <PROJECT_ITEM_ID> --wave "Wave N"`; report the selected item and checks. After explicit Project-mutation authorization, run `npm run delivery:start-next -- --item <PROJECT_ITEM_ID> --wave "Wave N" --apply --confirm-human-gate`; use its conversion and readback.
-3. Read `docs/development/workflow.md` only on demand for DoR/DoD, broad policy, or ambiguity; do not read it for routine transitions.
+3. Before requesting merge, run `npm run delivery:pr-status -- --pr <N> --issue <N> --role <intermediate|final>`; stop unless its read-only report says `Readiness: ready`.
+4. Read `docs/development/workflow.md` only on demand for DoR/DoD, broad policy, or ambiguity; do not read it for routine transitions.
 
 ## Output Contract
-Return dry-run evidence, exact authorization received, apply readback, any handoff, and unresolved blockers or risks.
+Return dry-run or PR-readiness evidence, exact authorization received, apply readback, any handoff, and unresolved blockers or risks.
 
 ## References
 - `../../docs/development/workflow.md` (on demand only)
