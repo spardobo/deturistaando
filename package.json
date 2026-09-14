@@ -6,6 +6,7 @@
         "dev": "vp dev",
         "build": "vp build",
         "delivery:status": "node scripts/github/project-status.mjs",
+        "delivery:pr-status": "node scripts/github/project-status.mjs pr-status",
         "delivery:start-next": "node scripts/github/project-status.mjs start-next",
         "format": "vp fmt resources/js scripts/quality playwright.config.js vite.config.js --write",
 

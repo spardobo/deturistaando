@@ -18,11 +18,10 @@ const matching = (items, issue) =>
     items.filter(
         (item) => item?.content?.number === issue.number && item.content.repository === repo,
     );
-const reference = (issue, closing) =>
-    new RegExp(
-        `\\b(?:${closing ? "closes|fixes|resolves" : "closes|fixes|resolves|refs|references|part of"})\\s*:?\\s*#${issue}\\b`,
-        "i",
-    );
+const issueReference = (issue, keywords) =>
+    new RegExp(`\\b(?:${keywords})\\s*:?\\s*#${issue}\\b`, "i");
+const closingReference = (issue) => issueReference(issue, "closes|fixes|resolves");
+const intermediateReference = (issue) => issueReference(issue, "refs|references|part of");
 
 function nativeGh(args) {
     return new Promise((resolve, reject) => {
@@ -92,6 +91,110 @@ async function items(gh) {
     return data.items;
 }
 
+function prStatusOptions(argv) {
+    const result = {};
+    for (let index = 0; index < argv.length; index += 1) {
+        const argument = argv[index];
+        if (!["--pr", "--issue", "--role"].includes(argument))
+            fail(`Unknown argument: ${argument}`);
+        const name = argument.slice(2);
+        if (result[name]) fail(`Duplicate argument: ${argument}`);
+        result[name] = argv[++index];
+    }
+    if (!result.pr || !result.issue || !result.role)
+        fail("Use --pr <N> --issue <N> --role <intermediate|final>.");
+    for (const name of ["pr", "issue"])
+        if (!/^\d+$/.test(result[name]) || Number(result[name]) < 1)
+            fail(`--${name} must be a positive integer.`);
+    if (!["intermediate", "final"].includes(result.role))
+        fail("--role must be intermediate or final.");
+    return result;
+}
+
+function names(labels, owner) {
+    if (!Array.isArray(labels) || labels.some((label) => typeof label?.name !== "string"))
+        fail(`${owner} labels are malformed.`);
+    return labels.map((label) => label.name);
+}
+
+function checks(rollup) {
+    if (!Array.isArray(rollup) || rollup.some((check) => typeof check?.name !== "string"))
+        fail("PR statusCheckRollup is malformed.");
+    const successful = new Set(
+        rollup
+            .filter((check) => check.conclusion === "SUCCESS" || check.state === "SUCCESS")
+            .map((check) => check.name),
+    );
+    if (!["policy", "quality"].every((name) => successful.has(name)))
+        fail("Required policy and quality checks are not successful.");
+}
+
+function reviewBudget(pr) {
+    if (![pr.additions, pr.deletions].every((value) => Number.isSafeInteger(value) && value >= 0))
+        fail("PR additions or deletions are malformed.");
+    const total = pr.additions + pr.deletions;
+    if (!Number.isSafeInteger(total) || total > 400)
+        fail("PR review budget exceeds 400; no size:exception route is configured.");
+    return total;
+}
+
+export async function runDeliveryPrStatus(argv, { gh = nativeGh, write = console.log } = {}) {
+    const options = prStatusOptions(argv);
+    const repository = await json(gh, ["repo", "view", repo, "--json", "id,nameWithOwner"]);
+    if (!repository?.id || repository.nameWithOwner !== repo)
+        fail("Repository identity is unavailable.");
+
+    const issue = await json(gh, [
+        "issue",
+        "view",
+        options.issue,
+        "--repo",
+        repo,
+        "--json",
+        "id,number,labels",
+    ]);
+    if (
+        !issue?.id ||
+        issue.number !== Number(options.issue) ||
+        names(issue.labels, "Issue").filter((name) => name === "status:approved").length !== 1
+    )
+        fail(`Issue #${options.issue} must exist and carry status:approved.`);
+
+    const pr = await json(gh, [
+        "pr",
+        "view",
+        options.pr,
+        "--repo",
+        repo,
+        "--json",
+        "number,state,isDraft,baseRefName,body,labels,statusCheckRollup,mergeable,mergeStateStatus,additions,deletions",
+    ]);
+    if (
+        pr?.number !== Number(options.pr) ||
+        pr.state !== "OPEN" ||
+        pr.isDraft !== false ||
+        pr.baseRefName !== "main"
+    )
+        fail("PR number, state, draft status, or base is invalid.");
+    const expectedReference =
+        options.role === "intermediate"
+            ? intermediateReference(options.issue)
+            : closingReference(options.issue);
+    if (typeof pr.body !== "string" || !expectedReference.test(pr.body))
+        fail("PR issue reference is invalid.");
+    const type = names(pr.labels, "PR").filter((name) => name.startsWith("type:"));
+    if (type.length !== 1) fail("PR must have exactly one type:* label.");
+    checks(pr.statusCheckRollup);
+    const budget = reviewBudget(pr);
+    if (pr.mergeable !== "MERGEABLE" || pr.mergeStateStatus !== "CLEAN")
+        fail("PR mergeability or merge state is not clean.");
+
+    write(
+        `Mode: read-only\nPR: #${pr.number}\nIssue approved: #${issue.number}\nRole: ${options.role}\nBase: ${pr.baseRefName}\nType: ${type[0]}\nChecks: policy, quality\nMerge: ${pr.mergeable}/${pr.mergeStateStatus}\nReview budget: ${budget}/400\nReadiness: ready`,
+    );
+    return { readiness: "ready" };
+}
+
 async function checkPr(gh, from, number, issue) {
     if (!number) fail(`${from} requires --pr <N>.`);
     const pr = await json(gh, [
@@ -105,10 +208,12 @@ async function checkPr(gh, from, number, issue) {
     ]);
     const valid =
         from === "Active"
-            ? pr?.state === "OPEN" && reference(issue, false).test(pr.body ?? "")
+            ? pr?.state === "OPEN" &&
+              (intermediateReference(issue).test(pr.body ?? "") ||
+                  closingReference(issue).test(pr.body ?? ""))
             : pr?.state === "MERGED" &&
               pr.baseRefName === "main" &&
-              reference(issue, true).test(pr.body ?? "");
+              closingReference(issue).test(pr.body ?? "");
     if (!valid)
         fail(`${from} → ${from === "Active" ? "Review" : "Verify"} PR evidence is invalid.`);
     return `PR #${number}`;
@@ -376,6 +481,7 @@ export async function runDeliveryStartNext(argv, { gh = nativeGh, write = consol
 export async function main(argv = process.argv.slice(2)) {
     try {
         if (argv[0] === "start-next") await runDeliveryStartNext(argv.slice(1));
+        else if (argv[0] === "pr-status") await runDeliveryPrStatus(argv.slice(1));
         else await runDeliveryStatus(argv);
     } catch (error) {
         console.error(`Delivery status failed: ${error.message}`);
