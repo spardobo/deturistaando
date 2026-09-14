@@ -4,7 +4,7 @@ description: "Trigger: DeTuristaAndo delivery flow, Project status, waves, PR ha
 license: Apache-2.0
 metadata:
   author: gentleman-programming
-  version: "2.0"
+  version: "2.1"
 ---
 
 ## Activation Contract
@@ -24,14 +24,16 @@ Use this Lean sequence:
 `Ready` is not part of the normal flow. If an old Project item still uses it, treat it as transitional legacy state and ask before moving it.
 
 ## Routine Playbook
-1. Select one clear Backlog item from the current wave; ask if WIP is already Active or selection is ambiguous.
-2. When starting a Project DraftIssue, convert that same Project item into a repository issue before moving it to Active. Do not create a duplicate issue and link it later.
-3. If the Backlog item is already a repository issue, use that issue directly.
-4. Request explicit human authorization before Project conversion/status movement, branch creation, commit, push, PR creation, merge, and Done/acceptance.
-5. During Active, run the smallest checks that prove the changed behavior. Do not repeat broad checks unless code changed or a failure explains why.
-6. Move to Review when a focused PR exists and references the issue.
-7. Move to Verify only after the final PR is merged to `main`.
-8. Move to Done only after integrated verification and human acceptance.
+Continue through safe, clear routine steps without pausing: select one unambiguous Backlog item, keep WIP at one, convert and move its Project item, gather focused evidence, and apply the state transition supported by observed issue or PR state.
+
+1. When starting a Project DraftIssue, convert that same Project item into a repository issue before moving it to Active. Do not create a duplicate issue and link it later.
+2. If the Backlog item is already a repository issue, use that issue directly.
+3. During Active, run the smallest checks that prove the changed behavior. Do not repeat broad checks unless code changed or a failure explains why.
+4. Move to Review when a focused PR exists and references the issue.
+5. Move to Verify only after the final PR is merged to `main`.
+6. Move to Done only after integrated verification and human acceptance.
+
+Human authorization gates are branch creation, commit, push, PR creation, merge, and Done acceptance. At a gate, stop and present a concrete decision question with closed options, including a proceed option and a do-not-proceed option. Do not continue until the human selects one.
 
 ## Waves and Lazy Loading
 Waves are rolling planning horizons, not extra ceremony.
@@ -43,12 +45,14 @@ Waves are rolling planning horizons, not extra ceremony.
 - Lazy-load `docs/development/workflow.md`, architecture decisions, quality strategy, or requirement detail only when the current risk or decision needs them.
 - Do not create speculative distant waves.
 
-## PR and Merge Rules
+## PR, Merge, and Branch Rules
 - Keep PRs small, focused, and tied to one outcome.
 - Use `Refs #<issue>` for intermediate PRs in an intentional chain.
 - Use `Closes #<issue>`, `Fixes #<issue>`, or `Resolves #<issue>` for the final PR.
 - If the work risks exceeding a comfortable review size, split before opening the PR.
 - Review and Verify remain distinct: open PR versus merged integrated result.
+- After merge, delete the remote PR branch. Once local `main` is synchronized, delete the local work branch.
+- Create a temporary backup branch only for recovery; remove it as soon as recovery no longer needs it.
 
 ## Stop Conditions
 Stop and ask instead of inferring when:

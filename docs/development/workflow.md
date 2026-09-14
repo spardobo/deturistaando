@@ -39,9 +39,11 @@ The actor delivering the work owns these state transitions. This assigns operati
 
 ### Operating the board
 
-Use the normal sequence `Backlog → Active → Review → Verify → Done`. Keep one item in `Active`; a blocked item does not justify starting unrelated work. `Review` is the open PR review and checks stage. `Verify` starts only after merge to `main` and records integrated verification. Exceptions, ambiguous scope, missing evidence, or dependencies stop the flow for a human decision.
+Use the normal sequence `Backlog → Active → Review → Verify → Done`. `Ready` is legacy only: treat an existing item in that state as transitional and obtain a human decision before moving it. Keep one item in `Active`; a blocked item does not justify starting unrelated work. `Review` is the open PR review and checks stage. `Verify` starts only after merge to `main` and records integrated verification.
 
-Waves are rolling planning horizons, not a second board state. Keep only coherent near-term work in `Backlog`. When a wave completes, use the authoritative requirements to select and load the next wave; do not create speculative distant waves. Branch creation, commits, pushes, PRs, merges, and `Done` remain separate human-authorized gates. Run focused checks for the change and repeat them only after a relevant change or observed failure.
+Continue through clear, safe routine work without pausing: select an unambiguous item, convert its DraftIssue if needed, apply observed state transitions, and gather focused evidence. Branch creation, commits, pushes, PR creation, merges, and `Done` acceptance are human-authorization gates. At each gate, stop and present a concrete question with closed proceed and do-not-proceed options. Exceptions, ambiguous scope, missing evidence, or dependencies also stop the flow for a human decision.
+
+Waves are rolling planning horizons, not a second board state. Keep only coherent near-term work in `Backlog`. When a wave completes, use the authoritative requirements to select and load the next wave; do not create speculative distant waves. Run focused checks for the change and repeat them only after a relevant change or observed failure.
 
 ## Work item
 
@@ -196,6 +198,8 @@ The fixed key is disposable smoke-test data and must never be used for a deploym
 - Use Conventional Commits with a short subject and useful body when rationale is not obvious.
 - Keep one outcome per pull request.
 - Rebase or update before merge and prefer squash merge for a focused history.
+- Delete the remote PR branch after merge. After local `main` is synchronized, delete the local work branch.
+- Use temporary backup branches only for recovery, and remove them as soon as they are no longer needed.
 - Do not use GitFlow, long-lived release branches, or mandatory second-person approval for a one-developer project.
 
 The repository baseline is established by one non-empty root commit before branch protection. It is the only direct-to-`main` exception; every later change follows GitHub Flow.
