@@ -142,7 +142,7 @@ Each item must identify its delivery wave, dependencies, acceptance evidence, an
 | 7 | Benefit allocation, authorized redemption, and final visual identity and polish. | `REQ-BEN-001` to `REQ-BEN-005`, `REQ-REL-001`, `REQ-UX-002` |
 | 8 | Reporting, audit, operational recovery, and release evidence. | `REQ-ANA-001`, `REQ-ANA-002`, `REQ-OPS-001`, `REQ-OPS-002`, `REQ-REL-002`, `REQ-OBS-001`, `REQ-TEC-008` |
 
-The register sequence supports lookup and does not define implementation order. The wave number controls dependency order and does not replace MoSCoW priority. An item can move to `Ready` only when its required upstream behavior exists or the item includes that behavior.
+The register sequence supports lookup and does not define implementation order. The wave number controls dependency order and does not replace MoSCoW priority. An item can move to `Active` only when its required upstream behavior exists or the item includes that behavior.
 
 **Sequencing rule:** Every UI-bearing slice delivers complete functional UX when it ships: semantic structure, accessibility, basic responsive behavior, applicable loading, empty, error, success, and recovery states, all applicable security controls, and automated evidence. Wave 7 adds the final palette, typography pairing, illustration system, decorative composition, controlled glow and depth, expressive motion, and deliberate representative visual-regression baselines; it does not defer accessibility or weaken earlier requirements.
 
