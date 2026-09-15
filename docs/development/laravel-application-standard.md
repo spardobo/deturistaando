@@ -2,6 +2,8 @@
 
 This is the operational authority for future project-owned Laravel, PHP, and Livewire work. It applies prospectively and implements [ADR-007](../architecture/decisions/007-conventional-laravel-monolith-with-use-case-actions.md) and [ADR-008](../architecture/decisions/008-google-wallet-project-owned-integration.md). The [architecture overview](../architecture/overview.md), [requirements](../requirements.md), [security authority](../architecture/security.md), and [workflow](workflow.md) retain their own responsibilities.
 
+For PostgreSQL schema and Laravel migration decisions, use the companion [database standard](database-standard.md).
+
 ## Quick path
 
 1. Read the active item and the linked authorities. Choose the smallest clear Laravel-native design.
