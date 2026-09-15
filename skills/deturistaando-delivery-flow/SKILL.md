@@ -52,7 +52,7 @@ Waves are rolling planning horizons, not extra ceremony.
 - Use `Closes #<issue>`, `Fixes #<issue>`, or `Resolves #<issue>` for the final PR.
 - If the work risks exceeding a comfortable review size, split before opening the PR.
 - Review and Verify remain distinct: open PR versus merged integrated result.
-- After merge, delete the remote PR branch and synchronize local `main` before integrated verification.
+- After merge, rely on GitHub's automatic remote PR branch deletion and synchronize local `main` before integrated verification.
 - Delete the local work branch only after the item reaches `Done`; until then, keep it available for Verify fixes.
 - Create a temporary backup branch only for recovery; remove it as soon as recovery no longer needs it.
 
