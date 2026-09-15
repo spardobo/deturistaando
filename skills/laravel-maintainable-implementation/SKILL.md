@@ -4,7 +4,7 @@ description: "Trigger: Laravel maintainable implementation, Laravel Actions, pro
 license: Apache-2.0
 metadata:
   author: gentleman-programming
-  version: "1.1"
+  version: "1.3"
 ---
 
 ## Activation Contract
@@ -27,7 +27,9 @@ Structure functions as a top-to-bottom narrative. Group related statements into 
 
 Use concise PHP when it improves clarity: ternaries, null coalescing, collection operations, early returns, and fluent Laravel APIs are welcome when they make the intent easier to read. Reject clever compression, hidden side effects, generic indirection, and long methods explained only by comments.
 
-Inside a function, add an implementation comment only when the block needs it to become faster to understand. Prefer better naming, structure, or helper extraction over comments that narrate obvious code.
+Prefer modern readable syntax when it makes structure visible. Use heredoc or nowdoc for multi-line HTML, SQL, text, or templates instead of compressed one-line strings; keep the source indentation easy to read. Interpolate and escape only when data is dynamic or untrusted; do not add escaping, helpers, variables, or collection pipelines for static literals.
+
+Inside a function, add an implementation comment only when the block needs it to become faster to understand. Prefer better naming and structure over comments that narrate obvious code. Extract helpers only when they remove meaningful complexity; do not split tiny static markup or simple literals into indirection.
 
 ## Decision Gates
 
