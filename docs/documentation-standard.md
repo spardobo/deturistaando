@@ -52,6 +52,7 @@ Technical documents use controlled English inspired by ASD-STE100. The project d
 | [`quality-strategy.md`](quality-strategy.md) | Test scope, measurable quality targets, CI gates, and release evidence. |
 | [`development/workflow.md`](development/workflow.md) | Lean/Kanban flow, Git rules, work-item policy, and delivery metrics. |
 | [`development/laravel-application-standard.md`](development/laravel-application-standard.md) | Canonical operational rules for future Laravel, PHP, and Livewire implementation. |
+| [`development/database-standard.md`](development/database-standard.md) | Canonical operational rules for project-owned PostgreSQL schema work and Laravel migrations. |
 
 ## Reading and change order
 

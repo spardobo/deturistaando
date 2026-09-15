@@ -4,7 +4,7 @@ description: "Trigger: Laravel maintainable implementation, Laravel Actions, pro
 license: Apache-2.0
 metadata:
   author: gentleman-programming
-  version: "1.3"
+  version: "1.4"
 ---
 
 ## Activation Contract
@@ -42,7 +42,7 @@ Inside a function, add an implementation comment only when the block needs it to
 
 ## Execution Steps
 
-1. Load the active item; choose the smallest clear Laravel-native design from the item itself when possible.
+1. Load the active item. For persistence or schema work, lazy-load the database standard before design. Choose the smallest clear Laravel-native design from the item itself when possible.
 2. Classify the operation, record applicable boundaries, and justify every optional abstraction.
 3. Implement focused Laravel-native behavior as a readable top-to-bottom narrative with semantic blocks.
 4. Apply security controls and the smallest useful tests for the changed behavior.
@@ -57,6 +57,7 @@ Report changed files, command classification, Action and transaction owner, post
 Load only the reference needed for the current decision:
 
 - [Laravel application standard](../../docs/development/laravel-application-standard.md): full classification, PHPDoc/comment, testing, or abstraction rule.
+- [Database standard](../../docs/development/database-standard.md): PostgreSQL persistence, schema, migration, relationship, lifecycle, audit, or indexing decision.
 - [ADR-007](../../docs/architecture/decisions/007-conventional-laravel-monolith-with-use-case-actions.md): architecture authority or Action convention ambiguity.
 - [ADR-008](../../docs/architecture/decisions/008-google-wallet-project-owned-integration.md): Google Wallet or provider-boundary work.
 - [Architecture overview](../../docs/architecture/overview.md): broad placement or cross-cutting architecture ambiguity.
