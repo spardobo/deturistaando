@@ -41,7 +41,7 @@ The actor delivering the work owns these state transitions. This assigns operati
 
 Use the normal sequence `Backlog → Active → Review → Verify → Done`. `Ready` is legacy only: treat an existing item in that state as transitional and obtain a human decision before moving it. Keep one item in `Active`; a blocked item does not justify starting unrelated work. `Review` is the open PR review and checks stage. `Verify` starts only after merge to `main` and records integrated verification.
 
-Continue through clear, safe routine work without pausing: select an unambiguous item, convert its DraftIssue if needed, apply observed state transitions, and gather focused evidence. Branch creation, commits, pushes, PR creation, merges, and `Done` acceptance are human-authorization gates. At each gate, stop and present a concrete question with closed proceed and do-not-proceed options. Exceptions, ambiguous scope, missing evidence, or dependencies also stop the flow for a human decision.
+Continue through clear, safe routine work without pausing: select an unambiguous item, convert its DraftIssue if needed, assign the person doing the work, apply observed state transitions, and gather focused evidence. Branch creation, commits, pushes, PR creation, merges, and `Done` acceptance are human-authorization gates. At each gate, stop and present a concrete question with closed proceed and do-not-proceed options. Exceptions, ambiguous scope, missing evidence, or dependencies also stop the flow for a human decision.
 
 Waves are rolling planning horizons, not a second board state. Keep only coherent near-term work in `Backlog`. When a wave completes, use the authoritative requirements to select and load the next wave; do not create speculative distant waves. Run focused checks for the change and repeat them only after a relevant change or observed failure.
 
@@ -61,7 +61,7 @@ Do not copy full requirements or architecture sections into the item. Link to th
 
 Use an outcome-oriented title with at most one primary requirement ID, such as `[REQ-HOM-001] Present the product home page`. Never concatenate several requirement IDs in a title. Record the primary, related, and cross-cutting requirement IDs in the item body so the title remains readable. Maintenance and documentation items that do not implement an authoritative requirement do not need a fabricated requirement prefix.
 
-A Backlog DraftIssue is converted into a repository issue as part of starting work. The same Project item remains the Kanban card; do not create a duplicate issue and link it later. If the item is already a repository issue, use it directly. The issue is the durable unit linked to its branch, pull request, checks, and resulting commit.
+A Backlog DraftIssue is converted into a repository issue as part of starting work. The same Project item remains the Kanban card; do not create a duplicate issue and link it later. If the item is already a repository issue, use it directly. When an item enters `Active`, assign the issue to the person doing the work: the current GitHub actor by default, or an explicitly named teammate when they are driving the item. The issue is the durable unit linked to its branch, pull request, checks, and resulting commit.
 
 ## Starting criteria
 
@@ -198,7 +198,8 @@ The fixed key is disposable smoke-test data and must never be used for a deploym
 - Use Conventional Commits with a short subject and useful body when rationale is not obvious.
 - Keep one outcome per pull request.
 - Rebase or update before merge and prefer squash merge for a focused history.
-- Delete the remote PR branch after merge. After local `main` is synchronized, delete the local work branch.
+- Delete the remote PR branch after merge and synchronize local `main` before integrated verification.
+- Delete the local work branch only after the item reaches `Done`; until then, keep it available for Verify fixes.
 - Use temporary backup branches only for recovery, and remove them as soon as they are no longer needed.
 - Do not use GitFlow, long-lived release branches, or mandatory second-person approval for a one-developer project.
 
