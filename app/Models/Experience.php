@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use App\Enums\ExperienceEditorialStatus;
+use Database\Factories\ExperienceFactory;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -13,8 +16,12 @@ use InvalidArgumentException;
  * Represents an editorially managed experience with authoritative schedule data.
  * Guarantees every Eloquent-created record receives a UUIDv7 public identity.
  */
+#[UseFactory(ExperienceFactory::class)]
 class Experience extends Model
 {
+    /** @use HasFactory<ExperienceFactory> */
+    use HasFactory;
+
     use SoftDeletes;
 
     protected $fillable = [

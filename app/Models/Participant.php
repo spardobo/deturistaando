@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use Database\Factories\ParticipantFactory;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -11,8 +14,12 @@ use Illuminate\Support\Str;
  * Represents a factual public participant relationship for one experience.
  * Guarantees every Eloquent-created record receives a UUIDv7 public identity.
  */
+#[UseFactory(ParticipantFactory::class)]
 class Participant extends Model
 {
+    /** @use HasFactory<ParticipantFactory> */
+    use HasFactory;
+
     use SoftDeletes;
 
     protected $fillable = [
