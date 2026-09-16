@@ -15,7 +15,17 @@ class Participant extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['public_id', 'experience_id', 'name', 'created_by_type', 'created_by_public_id', 'updated_by_type', 'updated_by_public_id', 'deleted_by_type', 'deleted_by_public_id'];
+    protected $fillable = [
+        'public_id',
+        'experience_id',
+        'name',
+        'created_by_type',
+        'created_by_public_id',
+        'updated_by_type',
+        'updated_by_public_id',
+        'deleted_by_type',
+        'deleted_by_public_id',
+    ];
 
     /**
      * Gets the attribute casts for participant lifecycle timestamps.
@@ -25,14 +35,11 @@ class Participant extends Model
      */
     protected function casts(): array
     {
-        return ['created_at' => 'immutable_datetime', 'updated_at' => 'immutable_datetime', 'deleted_at' => 'immutable_datetime'];
-    }
-
-    protected static function booted(): void
-    {
-        static::creating(function (self $participant): void {
-            $participant->public_id ??= (string) Str::uuid7();
-        });
+        return [
+            'created_at' => 'immutable_datetime',
+            'updated_at' => 'immutable_datetime',
+            'deleted_at' => 'immutable_datetime',
+        ];
     }
 
     /**
@@ -44,5 +51,12 @@ class Participant extends Model
     public function experience(): BelongsTo
     {
         return $this->belongsTo(Experience::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $participant): void {
+            $participant->public_id ??= (string) Str::uuid7();
+        });
     }
 }
