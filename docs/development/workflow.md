@@ -192,13 +192,13 @@ The fixed key is disposable smoke-test data and must never be used for a deploym
 
 ## Git and pull requests
 
-- Use GitHub Flow: branch from `main`, open a pull request, pass the required checks, merge, and delete the branch.
+- Use GitHub Flow: branch from `main`, open a pull request, pass the required checks, merge, and let GitHub delete the remote PR branch automatically.
 - Protect `main`; keep it releasable.
 - Use one of these branch prefixes: `feat/`, `fix/`, `chore/`, `docs/`, `style/`, `refactor/`, `perf/`, `test/`, `build/`, `ci/`, or `revert/`. The suffix uses lowercase letters, digits, dots, underscores, or hyphens. Dependabot's generated `dependabot/` branches are also valid.
 - Use Conventional Commits with a short subject and useful body when rationale is not obvious.
 - Keep one outcome per pull request.
 - Rebase or update before merge and prefer squash merge for a focused history.
-- Delete the remote PR branch after merge and synchronize local `main` before integrated verification.
+- After merge, rely on GitHub's automatic remote PR branch deletion and synchronize local `main` before integrated verification.
 - Delete the local work branch only after the item reaches `Done`; until then, keep it available for Verify fixes.
 - Use temporary backup branches only for recovery, and remove them as soon as they are no longer needed.
 - Do not use GitFlow, long-lived release branches, or mandatory second-person approval for a one-developer project.
