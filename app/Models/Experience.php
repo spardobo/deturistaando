@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ExperienceEditorialStatus;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -40,5 +41,16 @@ class Experience extends Model
                 throw new InvalidArgumentException('Experience timezone must be a valid IANA identifier.');
             }
         });
+    }
+
+    /**
+     * Gets the participants factually associated with this experience.
+     * Declares no contract exceptions.
+     *
+     * @return HasMany<Participant, $this> Guarantees the inverse participant relationship.
+     */
+    public function participants(): HasMany
+    {
+        return $this->hasMany(Participant::class);
     }
 }
