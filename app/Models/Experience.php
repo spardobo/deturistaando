@@ -3,8 +3,11 @@
 namespace App\Models;
 
 use App\Enums\ExperienceEditorialStatus;
+use Carbon\CarbonInterface;
 use Database\Factories\ExperienceFactory;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -69,6 +72,69 @@ class Experience extends Model
     public function participants(): HasMany
     {
         return $this->hasMany(Participant::class);
+    }
+
+    /** @param Builder<Experience> $query */
+    #[Scope]
+    protected function discoverableAt(Builder $query, CarbonInterface $now): void
+    {
+        $query
+            ->where('editorial_status', ExperienceEditorialStatus::Published)
+            ->where('ends_at', '>=', $now);
+    }
+
+    /** @param Builder<Experience> $query */
+    #[Scope]
+    protected function activeAt(Builder $query, CarbonInterface $now): void
+    {
+        $query
+            ->where('starts_at', '<=', $now)
+            ->where('ends_at', '>=', $now);
+    }
+
+    /** @param Builder<Experience> $query */
+    #[Scope]
+    protected function upcomingAt(Builder $query, CarbonInterface $now): void
+    {
+        $query->where('starts_at', '>', $now);
+    }
+
+    /** @param Builder<Experience> $query */
+    #[Scope]
+    protected function onLocalDate(Builder $query, string $date): void
+    {
+        $query->whereRaw(
+            '(starts_at AT TIME ZONE timezone)::date <= ? AND (ends_at AT TIME ZONE timezone)::date >= ?',
+            [$date, $date],
+        );
+    }
+
+    /** @param Builder<Experience> $query */
+    #[Scope]
+    protected function inLocality(Builder $query, string $locality): void
+    {
+        $query->where('locality', $locality);
+    }
+
+    /** @param Builder<Experience> $query */
+    #[Scope]
+    protected function inCategory(Builder $query, string $category): void
+    {
+        $query->where('category', $category);
+    }
+
+    /** @param Builder<Experience> $query */
+    #[Scope]
+    protected function forAudience(Builder $query, string $audience): void
+    {
+        $query->where('audience', $audience);
+    }
+
+    /** @param Builder<Experience> $query */
+    #[Scope]
+    protected function orderedForDiscovery(Builder $query): void
+    {
+        $query->orderBy('starts_at')->orderBy('title')->orderBy('id');
     }
 
     protected static function booted(): void
