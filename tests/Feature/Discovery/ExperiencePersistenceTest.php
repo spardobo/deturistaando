@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\ExperienceEditorialStatus;
+use App\Enums\ExperienceStatus;
 use App\Models\Experience;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
@@ -15,7 +15,7 @@ $attributes = fn (array $overrides = []): array => [...[
     'locality' => 'Madrid',
     'category' => 'Food',
     'audience' => 'Everyone',
-    'editorial_status' => ExperienceEditorialStatus::Published,
+    'status' => ExperienceStatus::Published,
     'starts_at' => now()->subHour(),
     'ends_at' => now()->addHour(),
     'timezone' => 'Europe/Madrid',
@@ -32,7 +32,7 @@ $attributes = fn (array $overrides = []): array => [...[
 test('experiences have the required persistence baseline', function (): void {
     $this->assertTrue(Schema::hasColumns('experiences', [
         'id', 'public_id', 'title', 'locality', 'category', 'audience',
-        'editorial_status', 'starts_at', 'ends_at', 'timezone',
+        'status', 'starts_at', 'ends_at', 'timezone',
         'created_at', 'created_by_type', 'created_by_public_id',
         'updated_at', 'updated_by_type', 'updated_by_public_id',
         'deleted_at', 'deleted_by_type', 'deleted_by_public_id',
@@ -82,13 +82,13 @@ test('created actor metadata is required without a database default', function (
     ]);
 });
 
-test('database rejects an unsupported editorial status', function () use ($attributes): void {
+test('database rejects an unsupported status', function () use ($attributes): void {
     $this->expectException(QueryException::class);
 
     DB::table('experiences')->insert([
         ...$attributes(),
         'public_id' => (string) str()->uuid7(),
-        'editorial_status' => 'unknown',
+        'status' => 'unknown',
     ]);
 });
 

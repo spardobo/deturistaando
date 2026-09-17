@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\ExperienceEditorialStatus;
+use App\Enums\ExperienceStatus;
 use Carbon\CarbonInterface;
 use Database\Factories\ExperienceFactory;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -33,7 +33,7 @@ class Experience extends Model
         'locality',
         'category',
         'audience',
-        'editorial_status',
+        'status',
         'starts_at',
         'ends_at',
         'timezone',
@@ -54,7 +54,7 @@ class Experience extends Model
     protected function casts(): array
     {
         return [
-            'editorial_status' => ExperienceEditorialStatus::class,
+            'status' => ExperienceStatus::class,
             'starts_at' => 'immutable_datetime',
             'ends_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
@@ -79,7 +79,7 @@ class Experience extends Model
     protected function discoverableAt(Builder $query, CarbonInterface $now): void
     {
         $query
-            ->where('editorial_status', ExperienceEditorialStatus::Published)
+            ->where('status', ExperienceStatus::Published)
             ->where('ends_at', '>=', $now);
     }
 

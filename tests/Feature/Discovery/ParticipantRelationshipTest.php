@@ -14,7 +14,7 @@ $experienceAttributes = fn (): array => [
     'locality' => 'Madrid',
     'category' => 'Food',
     'audience' => 'Everyone',
-    'editorial_status' => 'published',
+    'status' => 'published',
     'starts_at' => now()->subHour(),
     'ends_at' => now()->addHour(),
     'timezone' => 'Europe/Madrid',
