@@ -30,8 +30,8 @@ $participantAttributes = fn (int $experienceId, array $overrides = []): array =>
 test('participant belongs to an experience and has required baseline columns', function () use ($experienceAttributes, $participantAttributes): void {
     $this->assertTrue(Schema::hasColumns('participants', [
         'id', 'public_id', 'experience_id', 'name', 'created_at', 'updated_at', 'deleted_at',
-        'created_by_type', 'created_by_public_id', 'updated_by_type', 'updated_by_public_id',
-        'deleted_by_type', 'deleted_by_public_id',
+        'created_by_type', 'created_by_id', 'updated_by_type', 'updated_by_id',
+        'deleted_by_type', 'deleted_by_id',
     ]));
 
     $experience = Experience::query()->create($experienceAttributes());

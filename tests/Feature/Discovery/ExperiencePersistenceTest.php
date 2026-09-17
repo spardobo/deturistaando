@@ -20,11 +20,11 @@ $attributes = fn (array $overrides = []): array => [...[
     'ends_at' => now()->addHour(),
     'timezone' => 'Europe/Madrid',
     'created_by_type' => 'system',
-    'created_by_public_id' => null,
+    'created_by_id' => null,
     'updated_by_type' => null,
-    'updated_by_public_id' => null,
+    'updated_by_id' => null,
     'deleted_by_type' => null,
-    'deleted_by_public_id' => null,
+    'deleted_by_id' => null,
     'created_at' => now(),
     'updated_at' => now(),
 ], ...$overrides];
@@ -33,9 +33,9 @@ test('experiences have the required persistence baseline', function (): void {
     $this->assertTrue(Schema::hasColumns('experiences', [
         'id', 'public_id', 'title', 'locality', 'category', 'audience',
         'status', 'starts_at', 'ends_at', 'timezone',
-        'created_at', 'created_by_type', 'created_by_public_id',
-        'updated_at', 'updated_by_type', 'updated_by_public_id',
-        'deleted_at', 'deleted_by_type', 'deleted_by_public_id',
+        'created_at', 'created_by_type', 'created_by_id',
+        'updated_at', 'updated_by_type', 'updated_by_id',
+        'deleted_at', 'deleted_by_type', 'deleted_by_id',
     ]));
 });
 

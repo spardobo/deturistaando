@@ -38,11 +38,11 @@ class Experience extends Model
         'ends_at',
         'timezone',
         'created_by_type',
-        'created_by_public_id',
+        'created_by_id',
         'updated_by_type',
-        'updated_by_public_id',
+        'updated_by_id',
         'deleted_by_type',
-        'deleted_by_public_id',
+        'deleted_by_id',
     ];
 
     /**
