@@ -1,152 +1,133 @@
 <?php
 
-namespace Tests\Feature\Discovery;
-
 use App\Models\Experience;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 
-class ExperienceDiscoveryScopeTest extends TestCase
-{
-    use RefreshDatabase;
+uses(RefreshDatabase::class);
 
-    private CarbonImmutable $now;
+beforeEach(function (): void {
+    $this->now = CarbonImmutable::parse('2026-09-09 12:00:00 UTC');
+    CarbonImmutable::setTestNow($this->now);
+});
 
-    protected function setUp(): void
-    {
-        parent::setUp();
+afterEach(function (): void {
+    CarbonImmutable::setTestNow();
+});
 
-        $this->now = CarbonImmutable::parse('2026-09-09 12:00:00 UTC');
-        CarbonImmutable::setTestNow($this->now);
-    }
+it('returns published unfinished candidates in deterministic discovery order', function (): void {
+    $later = Experience::factory()->upcoming()->create(['title' => 'Later', 'starts_at' => $this->now->addHours(2)]);
+    $sameStartZulu = Experience::factory()->upcoming()->create(['title' => 'Zulu', 'starts_at' => $this->now->addHour()]);
+    $sameStartAlpha = Experience::factory()->upcoming()->create(['title' => 'Alpha', 'starts_at' => $this->now->addHour()]);
+    $active = Experience::factory()->active()->create(['title' => 'Active']);
+    Experience::factory()->draft()->active()->create();
+    Experience::factory()->cancelled()->upcoming()->create();
+    Experience::factory()->finished()->create();
+    Experience::factory()->trashed()->active()->create();
 
-    protected function tearDown(): void
-    {
-        CarbonImmutable::setTestNow();
+    $results = Experience::query()->discoverableAt($this->now)->orderedForDiscovery()->get();
 
-        parent::tearDown();
-    }
+    $this->assertEquals([$active->id, $sameStartAlpha->id, $sameStartZulu->id, $later->id], $results->pluck('id')->all());
+});
 
-    public function test_discoverable_candidates_are_published_unfinished_and_deterministically_ordered(): void
-    {
-        $later = Experience::factory()->upcoming()->create(['title' => 'Later', 'starts_at' => $this->now->addHours(2)]);
-        $sameStartZulu = Experience::factory()->upcoming()->create(['title' => 'Zulu', 'starts_at' => $this->now->addHour()]);
-        $sameStartAlpha = Experience::factory()->upcoming()->create(['title' => 'Alpha', 'starts_at' => $this->now->addHour()]);
-        $active = Experience::factory()->active()->create(['title' => 'Active']);
-        Experience::factory()->draft()->active()->create();
-        Experience::factory()->cancelled()->upcoming()->create();
-        Experience::factory()->finished()->create();
-        Experience::factory()->trashed()->active()->create();
+it('classifies active and upcoming scopes at inclusive schedule boundaries', function (): void {
+    $atStart = Experience::factory()->create(['starts_at' => $this->now, 'ends_at' => $this->now->addHour()]);
+    $atEnd = Experience::factory()->create(['starts_at' => $this->now->subHour(), 'ends_at' => $this->now]);
+    $upcoming = Experience::factory()->upcoming()->create();
 
-        $results = Experience::query()->discoverableAt($this->now)->orderedForDiscovery()->get();
+    $candidate = Experience::query()->discoverableAt($this->now);
 
-        $this->assertEquals([$active->id, $sameStartAlpha->id, $sameStartZulu->id, $later->id], $results->pluck('id')->all());
-    }
+    $this->assertEqualsCanonicalizing([$atStart->id, $atEnd->id], $candidate->clone()->activeAt($this->now)->pluck('id')->all());
+    $this->assertSame([$upcoming->id], $candidate->clone()->upcomingAt($this->now)->pluck('id')->all());
+});
 
-    public function test_active_and_upcoming_scopes_classify_inclusive_schedule_boundaries(): void
-    {
-        $atStart = Experience::factory()->create(['starts_at' => $this->now, 'ends_at' => $this->now->addHour()]);
-        $atEnd = Experience::factory()->create(['starts_at' => $this->now->subHour(), 'ends_at' => $this->now]);
-        $upcoming = Experience::factory()->upcoming()->create();
+it('rejects mismatched exact facets and composes them with local date and state', function (): void {
+    $activeMatch = Experience::factory()->active()->create([
+        'locality' => 'Seville',
+        'category' => 'Music',
+        'audience' => 'Adults',
+    ]);
+    $upcomingMatch = Experience::factory()->upcoming()->create([
+        'locality' => 'Seville',
+        'category' => 'Music',
+        'audience' => 'Adults',
+    ]);
+    $wrongLocality = Experience::factory()->active()->create([
+        'locality' => 'Cadiz',
+        'category' => 'Music',
+        'audience' => 'Adults',
+    ]);
+    $wrongCategory = Experience::factory()->active()->create([
+        'locality' => 'Seville',
+        'category' => 'Food',
+        'audience' => 'Adults',
+    ]);
+    $wrongAudience = Experience::factory()->active()->create([
+        'locality' => 'Seville',
+        'category' => 'Music',
+        'audience' => 'Families',
+    ]);
 
-        $candidate = Experience::query()->discoverableAt($this->now);
+    $facetedCandidates = Experience::query()
+        ->discoverableAt($this->now)
+        ->onLocalDate('2026-09-09')
+        ->inLocality('Seville')
+        ->inCategory('Music')
+        ->forAudience('Adults');
 
-        $this->assertEqualsCanonicalizing([$atStart->id, $atEnd->id], $candidate->clone()->activeAt($this->now)->pluck('id')->all());
-        $this->assertSame([$upcoming->id], $candidate->clone()->upcomingAt($this->now)->pluck('id')->all());
-    }
+    $activeResults = $facetedCandidates->clone()->activeAt($this->now)->pluck('id')->all();
 
-    public function test_exact_facet_scopes_reject_each_mismatch_and_compose_with_local_date_and_state(): void
-    {
-        $activeMatch = Experience::factory()->active()->create([
-            'locality' => 'Seville',
-            'category' => 'Music',
-            'audience' => 'Adults',
-        ]);
-        $upcomingMatch = Experience::factory()->upcoming()->create([
-            'locality' => 'Seville',
-            'category' => 'Music',
-            'audience' => 'Adults',
-        ]);
-        $wrongLocality = Experience::factory()->active()->create([
-            'locality' => 'Cadiz',
-            'category' => 'Music',
-            'audience' => 'Adults',
-        ]);
-        $wrongCategory = Experience::factory()->active()->create([
-            'locality' => 'Seville',
-            'category' => 'Food',
-            'audience' => 'Adults',
-        ]);
-        $wrongAudience = Experience::factory()->active()->create([
-            'locality' => 'Seville',
-            'category' => 'Music',
-            'audience' => 'Families',
-        ]);
+    $this->assertSame([$activeMatch->id], $activeResults);
+    $this->assertNotContains($wrongLocality->id, $activeResults);
+    $this->assertNotContains($wrongCategory->id, $activeResults);
+    $this->assertNotContains($wrongAudience->id, $activeResults);
+    $this->assertSame([$upcomingMatch->id], $facetedCandidates->clone()->upcomingAt($this->now)->pluck('id')->all());
+    $this->assertSame([], Experience::query()
+        ->discoverableAt($this->now)
+        ->onLocalDate('2026-09-09')
+        ->inLocality('Seville')
+        ->inCategory('Food')
+        ->forAudience('Families')
+        ->upcomingAt($this->now)
+        ->pluck('id')
+        ->all());
+});
 
-        $facetedCandidates = Experience::query()
-            ->discoverableAt($this->now)
-            ->onLocalDate('2026-09-09')
-            ->inLocality('Seville')
-            ->inCategory('Music')
-            ->forAudience('Adults');
+it('uses record local dates and rejects adjacent and daylight saving control rows', function (): void {
+    $utcCrossing = Experience::factory()->active()->create([
+        'timezone' => 'America/New_York',
+        'starts_at' => CarbonImmutable::parse('2026-09-10 03:30:00 UTC'),
+        'ends_at' => CarbonImmutable::parse('2026-09-10 03:45:00 UTC'),
+    ]);
+    $dstCrossing = Experience::factory()->upcoming()->create([
+        'timezone' => 'Europe/Madrid',
+        'starts_at' => CarbonImmutable::parse('2026-10-24 22:30:00 UTC'),
+        'ends_at' => CarbonImmutable::parse('2026-10-25 02:30:00 UTC'),
+    ]);
+    $dstControl = Experience::factory()->upcoming()->create([
+        'timezone' => 'Europe/Madrid',
+        'starts_at' => CarbonImmutable::parse('2026-10-24 20:30:00 UTC'),
+        'ends_at' => CarbonImmutable::parse('2026-10-24 21:30:00 UTC'),
+    ]);
 
-        $activeResults = $facetedCandidates->clone()->activeAt($this->now)->pluck('id')->all();
+    $this->assertSame([$utcCrossing->id], Experience::query()->onLocalDate('2026-09-09')->pluck('id')->all());
+    $this->assertSame([], Experience::query()->onLocalDate('2026-09-08')->pluck('id')->all());
+    $this->assertSame([], Experience::query()->onLocalDate('2026-09-10')->pluck('id')->all());
+    $this->assertSame([$dstCrossing->id], Experience::query()->onLocalDate('2026-10-25')->pluck('id')->all());
+    $this->assertSame([$dstControl->id], Experience::query()->onLocalDate('2026-10-24')->pluck('id')->all());
+});
 
-        $this->assertSame([$activeMatch->id], $activeResults);
-        $this->assertNotContains($wrongLocality->id, $activeResults);
-        $this->assertNotContains($wrongCategory->id, $activeResults);
-        $this->assertNotContains($wrongAudience->id, $activeResults);
-        $this->assertSame([$upcomingMatch->id], $facetedCandidates->clone()->upcomingAt($this->now)->pluck('id')->all());
-        $this->assertSame([], Experience::query()
-            ->discoverableAt($this->now)
-            ->onLocalDate('2026-09-09')
-            ->inLocality('Seville')
-            ->inCategory('Food')
-            ->forAudience('Families')
-            ->upcomingAt($this->now)
-            ->pluck('id')
-            ->all());
-    }
+it('uses the internal ID as the final discovery ordering tie breaker', function (): void {
+    $first = Experience::factory()->upcoming()->create([
+        'title' => 'Same title',
+        'starts_at' => $this->now->addHour(),
+    ]);
+    $second = Experience::factory()->upcoming()->create([
+        'title' => 'Same title',
+        'starts_at' => $this->now->addHour(),
+    ]);
 
-    public function test_local_date_scope_uses_record_local_dates_and_rejects_adjacent_and_dst_control_rows(): void
-    {
-        $utcCrossing = Experience::factory()->active()->create([
-            'timezone' => 'America/New_York',
-            'starts_at' => CarbonImmutable::parse('2026-09-10 03:30:00 UTC'),
-            'ends_at' => CarbonImmutable::parse('2026-09-10 03:45:00 UTC'),
-        ]);
-        $dstCrossing = Experience::factory()->upcoming()->create([
-            'timezone' => 'Europe/Madrid',
-            'starts_at' => CarbonImmutable::parse('2026-10-24 22:30:00 UTC'),
-            'ends_at' => CarbonImmutable::parse('2026-10-25 02:30:00 UTC'),
-        ]);
-        $dstControl = Experience::factory()->upcoming()->create([
-            'timezone' => 'Europe/Madrid',
-            'starts_at' => CarbonImmutable::parse('2026-10-24 20:30:00 UTC'),
-            'ends_at' => CarbonImmutable::parse('2026-10-24 21:30:00 UTC'),
-        ]);
+    $ids = Experience::query()->discoverableAt($this->now)->orderedForDiscovery()->pluck('id')->all();
 
-        $this->assertSame([$utcCrossing->id], Experience::query()->onLocalDate('2026-09-09')->pluck('id')->all());
-        $this->assertSame([], Experience::query()->onLocalDate('2026-09-08')->pluck('id')->all());
-        $this->assertSame([], Experience::query()->onLocalDate('2026-09-10')->pluck('id')->all());
-        $this->assertSame([$dstCrossing->id], Experience::query()->onLocalDate('2026-10-25')->pluck('id')->all());
-        $this->assertSame([$dstControl->id], Experience::query()->onLocalDate('2026-10-24')->pluck('id')->all());
-    }
-
-    public function test_discovery_order_uses_internal_id_as_the_final_tie_breaker(): void
-    {
-        $first = Experience::factory()->upcoming()->create([
-            'title' => 'Same title',
-            'starts_at' => $this->now->addHour(),
-        ]);
-        $second = Experience::factory()->upcoming()->create([
-            'title' => 'Same title',
-            'starts_at' => $this->now->addHour(),
-        ]);
-
-        $ids = Experience::query()->discoverableAt($this->now)->orderedForDiscovery()->pluck('id')->all();
-
-        $this->assertSame([$first->id, $second->id], $ids);
-    }
-}
+    $this->assertSame([$first->id, $second->id], $ids);
+});
