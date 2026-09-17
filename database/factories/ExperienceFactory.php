@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\ExperienceEditorialStatus;
+use App\Enums\ExperienceStatus;
 use App\Models\Experience;
 use Illuminate\Database\Eloquent\Factories\Attributes\UseModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -18,7 +18,7 @@ class ExperienceFactory extends Factory
             'locality' => 'Madrid',
             'category' => 'Food',
             'audience' => 'Everyone',
-            'editorial_status' => ExperienceEditorialStatus::Published,
+            'status' => ExperienceStatus::Published,
             'starts_at' => now()->subHour(),
             'ends_at' => now()->addHour(),
             'timezone' => 'Europe/Madrid',
@@ -33,17 +33,17 @@ class ExperienceFactory extends Factory
 
     public function published(): static
     {
-        return $this->state(['editorial_status' => ExperienceEditorialStatus::Published]);
+        return $this->state(['status' => ExperienceStatus::Published]);
     }
 
     public function draft(): static
     {
-        return $this->state(['editorial_status' => ExperienceEditorialStatus::Draft]);
+        return $this->state(['status' => ExperienceStatus::Draft]);
     }
 
     public function cancelled(): static
     {
-        return $this->state(['editorial_status' => ExperienceEditorialStatus::Cancelled]);
+        return $this->state(['status' => ExperienceStatus::Cancelled]);
     }
 
     public function active(): static

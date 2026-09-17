@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\ExperienceEditorialStatus;
+use App\Enums\ExperienceStatus;
 use App\Models\Experience;
 use App\Models\Participant;
 use Carbon\CarbonImmutable;
@@ -25,7 +25,7 @@ test('factories create a published active experience and related participant', f
     $this->assertSame('Madrid', $experience->locality);
     $this->assertSame('Food', $experience->category);
     $this->assertSame('Everyone', $experience->audience);
-    $this->assertSame(ExperienceEditorialStatus::Published, $experience->editorial_status);
+    $this->assertSame(ExperienceStatus::Published, $experience->status);
     $this->assertSame('Europe/Madrid', $experience->timezone);
     $this->assertSame('2026-09-09T11:00:00+00:00', $experience->starts_at->toAtomString());
     $this->assertSame('2026-09-09T13:00:00+00:00', $experience->ends_at->toAtomString());
@@ -42,13 +42,13 @@ test('experience factory editorial and temporal states are deterministic', funct
     $cancelled = Experience::factory()->cancelled()->upcoming()->create();
     $finished = Experience::factory()->published()->finished()->create();
 
-    $this->assertSame(ExperienceEditorialStatus::Draft, $draft->editorial_status);
+    $this->assertSame(ExperienceStatus::Draft, $draft->status);
     $this->assertSame('2026-09-09T11:00:00+00:00', $draft->starts_at->toAtomString());
     $this->assertSame('2026-09-09T13:00:00+00:00', $draft->ends_at->toAtomString());
-    $this->assertSame(ExperienceEditorialStatus::Cancelled, $cancelled->editorial_status);
+    $this->assertSame(ExperienceStatus::Cancelled, $cancelled->status);
     $this->assertSame('2026-09-09T13:00:00+00:00', $cancelled->starts_at->toAtomString());
     $this->assertSame('2026-09-09T14:00:00+00:00', $cancelled->ends_at->toAtomString());
-    $this->assertSame(ExperienceEditorialStatus::Published, $finished->editorial_status);
+    $this->assertSame(ExperienceStatus::Published, $finished->status);
     $this->assertSame('2026-09-09T10:00:00+00:00', $finished->starts_at->toAtomString());
     $this->assertSame('2026-09-09T11:00:00+00:00', $finished->ends_at->toAtomString());
 });
