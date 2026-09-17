@@ -39,7 +39,7 @@ The actor delivering the work owns these state transitions. This assigns operati
 
 ### Operating the board
 
-Use the normal sequence `Backlog → Active → Review → Verify → Done`. `Ready` is legacy only: treat an existing item in that state as transitional and obtain a human decision before moving it. Keep one item in `Active`; a blocked item does not justify starting unrelated work. `Review` is the open PR review and checks stage. `Verify` starts only after merge to `main` and records integrated verification.
+Use the normal sequence `Backlog → Active → Review → Verify → Done`. Obtain a human decision before moving an item from a state outside this workflow. Keep one item in `Active`; a blocked item does not justify starting unrelated work. `Review` is the open PR review and checks stage. `Verify` starts only after merge to `main` and records integrated verification.
 
 Continue through clear, safe routine work without pausing: select an unambiguous item, convert its DraftIssue if needed, assign the person doing the work, apply observed state transitions, and gather focused evidence. Branch creation, commits, pushes, PR creation, merges, and `Done` acceptance are human-authorization gates. At each gate, stop and present a concrete question with closed proceed and do-not-proceed options. Exceptions, ambiguous scope, missing evidence, or dependencies also stop the flow for a human decision.
 
@@ -91,10 +91,7 @@ An item is done when:
 Delivery evidence depends on the type of change:
 
 - Versioned work links the pull request and the resulting commit on `main`.
-- The one-time repository baseline exception links its direct initial commit.
 - GitHub configuration that does not exist in Git history links the stable Project, ruleset, or settings resource and records the verification date.
-
-The two Done drafts created before the issue-first gate remain historical drafts with explicit evidence. They are not precedent for bypassing the repository issue, pull-request, or protected-branch workflow.
 
 ## Initial delivery slices
 
@@ -203,8 +200,6 @@ The fixed key is disposable smoke-test data and must never be used for a deploym
 - Use temporary backup branches only for recovery, and remove them as soon as they are no longer needed.
 - Do not use GitFlow, long-lived release branches, or mandatory second-person approval for a one-developer project.
 
-The repository baseline is established by one non-empty root commit before branch protection. It is the only direct-to-`main` exception; every later change follows GitHub Flow.
-
 The pull-request description states outcome, requirement IDs, risk, evidence, screenshots for UI changes, and follow-up work that is explicitly excluded. Every human pull request must reference at least one repository issue labeled `status:approved`. A final pull request uses `Closes #N`, `Fixes #N`, or `Resolves #N`; an intermediate pull request in a documented chain uses `Refs #N`, `References #N`, or `Part of #N`. Only the final pull request closes the shared issue. Apply exactly one `type:*` label to the pull request.
 
 Dependabot maintenance is the only operational exception to issue linkage: a pull request authored by `dependabot[bot]` from a matching `dependabot/` branch may omit the closing reference and approved issue, but must carry exactly the `type:chore` label. Human pull requests and every other bot remain subject to the full policy.
@@ -240,7 +235,7 @@ The current automation baseline uses one required `quality` job on a disposable 
 
 Checkout uses full history for Gitleaks. All actions are fixed by commit SHA, and PostgreSQL and Gitleaks are fixed by image digest. `actions/setup-node` caches npm downloads and `actions/cache` caches Composer download archives with a `composer.lock`-derived key. CI never caches `node_modules/` or `vendor/`; `npm ci` and `composer install` reconstruct both dependency trees from lockfiles on every run.
 
-GitHub Copilot Code Review and the Copilot coding agent are not part of Copilot Free, so neither is configured. Human acceptance and deterministic CI remain authoritative.
+Project policy excludes GitHub Copilot Code Review and the Copilot coding agent from repository gates. Human acceptance and deterministic CI remain authoritative.
 
 The delivery target is:
 

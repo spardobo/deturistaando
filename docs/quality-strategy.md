@@ -177,7 +177,7 @@ Apply the minimum gate in the [security architecture](architecture/security.md):
 
 Use OWASP guidance to review applicable risks before public release. Do not add a large security platform when Laravel configuration, tests, and lightweight scanners cover the current risk.
 
-GitHub Copilot Code Review and the Copilot coding agent are not included in Copilot Free and are not configured as repository gates. Reconsider them only if a paid plan or explicit organization entitlement changes that constraint.
+Project policy excludes GitHub Copilot Code Review and the Copilot coding agent from repository gates. Human acceptance and deterministic CI remain authoritative.
 
 ## Accessibility evidence (continuous)
 

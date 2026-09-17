@@ -78,7 +78,9 @@ The organizer can save an incomplete draft. Publication requires all operational
 
 ### Experience
 
-| State | Meaning | Main transitions |
+The persisted business `status` is `draft`, `published`, or `cancelled`, enforced by a PHP enum and database `CHECK`. The table below describes product behavior, not additional stored status values: `upcoming`, `active`, and `finished` derive from the schedule; the redemption-only period follows visit and redemption dates. Dates never publish or unpublish an experience.
+
+| State or operational phase | Meaning | Main transitions |
 |---|---|---|
 | Draft | Private and editable. | Publish or cancel. |
 | Published | Public before the visit period. | Start, correct public content, or cancel. |
@@ -88,6 +90,8 @@ The organizer can save an incomplete draft. Publication requires all operational
 | Cancelled | Operations stop and the public page explains the state. | None. |
 
 Structural rules become immutable after the first participation. Public text can be corrected when the change does not alter visitor eligibility or benefit conditions.
+
+No separate business status is defined for Participant; `deleted_at` represents logical removal.
 
 ### Business access
 
@@ -163,6 +167,14 @@ Structural rules become immutable after the first participation. Public text can
 - Redemption does not reset participation or visits.
 - A provider failure does not reverse an accepted domain operation.
 - Product reports describe recorded activity, not sales or economic impact.
+
+## Lifecycle, attribution, and historical reporting
+
+Project-owned mutable domain entities, including Experience and Participant, share timestamps, last-actor metadata, and soft deletion for ordinary removal under the [database standard](development/database-standard.md#uniform-table-baseline). Owning write Actions must set internal actor type/ID pairs server-side: writes use canonical decimal User IDs as text or deliberate `system` with null ID. Attribution has no foreign key and survives User deletion, but does not promise resolvable personal history. Framework, Starter Kit, and account behavior remain unchanged.
+
+Ordinary reads exclude deleted rows; public children also respect parent visibility. Parent removal does not soft-delete children, and restoration does not revive independently deleted children. Soft deletion retains the latest row, not versions or exact historical attributes.
+
+Authorized historical reports consider event periods and meaningful recorded facts rather than only currently active or non-deleted parents. Visits, redemptions, and audit events remain append-only in ordinary operation, with explicit feature-owned correction/invalidation semantics. Controlled retention/purge is separate; retention periods must be resolved before affected production data ships, without implying indefinite PII retention.
 
 ## Recovery behavior
 

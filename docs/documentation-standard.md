@@ -13,6 +13,16 @@ This document defines how the **DeTuristaAndo** documentation is organized and m
 | Proportionality | Add process, abstraction, security, or tooling only when product risk or delivery needs justify it. |
 | Lean scope | Remove information that does not help a current decision, implementation, operation, or review. |
 
+## Living-document rule
+
+Update project documents directly as agreed decisions evolve. Each document must remain understandable without delivery history:
+
+- Standards prescribe agreed rules for present and future development; they are not inventories of implemented features.
+- Conceptual design describes the agreed product model, including capabilities not yet built, without claiming implementation or deployment.
+- Implementation and operating documentation describe verified actual behavior.
+- ADRs preserve decision history under the [detail policy](#detail-policy); issues and pull requests own execution history. Keep concrete issue, pull-request, and commit references, delivery anecdotes, and old-to-new naming narratives out of living project documents.
+- Exclude external project, training, and reviewer attribution. Retain independently justified rules and legitimate technical and market sources.
+
 ## Language and terminology
 
 - Write `README.md` in neutral professional Spanish.
