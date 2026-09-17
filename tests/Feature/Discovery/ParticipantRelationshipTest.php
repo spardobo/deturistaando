@@ -1,123 +1,103 @@
 <?php
 
-namespace Tests\Feature\Discovery;
-
 use App\Models\Experience;
 use App\Models\Participant;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Tests\TestCase;
 
-class ParticipantRelationshipTest extends TestCase
-{
-    use RefreshDatabase;
+uses(RefreshDatabase::class);
 
-    public function test_participant_belongs_to_an_experience_and_has_required_baseline_columns(): void
-    {
-        $this->assertTrue(Schema::hasColumns('participants', [
-            'id', 'public_id', 'experience_id', 'name', 'created_at', 'updated_at', 'deleted_at',
-            'created_by_type', 'created_by_public_id', 'updated_by_type', 'updated_by_public_id',
-            'deleted_by_type', 'deleted_by_public_id',
-        ]));
+$experienceAttributes = fn (): array => [
+    'title' => 'Market morning',
+    'locality' => 'Madrid',
+    'category' => 'Food',
+    'audience' => 'Everyone',
+    'editorial_status' => 'published',
+    'starts_at' => now()->subHour(),
+    'ends_at' => now()->addHour(),
+    'timezone' => 'Europe/Madrid',
+    'created_by_type' => 'system',
+];
 
-        $experience = Experience::query()->create($this->experienceAttributes());
-        $participant = Participant::query()->create($this->participantAttributes($experience->id));
+$participantAttributes = fn (int $experienceId, array $overrides = []): array => [...[
+    'experience_id' => $experienceId,
+    'name' => 'Market stand',
+    'created_by_type' => 'system',
+], ...$overrides];
 
-        $this->assertTrue($experience->participants()->whereKey($participant)->exists());
-        $this->assertTrue($participant->experience()->is($experience));
-        $this->assertSame('7', $participant->public_id[14]);
-    }
+test('participant belongs to an experience and has required baseline columns', function () use ($experienceAttributes, $participantAttributes): void {
+    $this->assertTrue(Schema::hasColumns('participants', [
+        'id', 'public_id', 'experience_id', 'name', 'created_at', 'updated_at', 'deleted_at',
+        'created_by_type', 'created_by_public_id', 'updated_by_type', 'updated_by_public_id',
+        'deleted_by_type', 'deleted_by_public_id',
+    ]));
 
-    public function test_participant_lifecycle_columns_use_postgresql_timestamptz_without_a_creator_default(): void
-    {
-        $types = DB::table('information_schema.columns')
-            ->where('table_schema', 'public')
-            ->where('table_name', 'participants')
-            ->whereIn('column_name', ['created_at', 'updated_at', 'deleted_at'])
-            ->pluck('data_type', 'column_name')
-            ->all();
-        $createdByType = DB::table('information_schema.columns')
-            ->where('table_schema', 'public')->where('table_name', 'participants')
-            ->where('column_name', 'created_by_type')->first();
+    $experience = Experience::query()->create($experienceAttributes());
+    $participant = Participant::query()->create($participantAttributes($experience->id));
 
-        $this->assertSame(array_fill_keys(['created_at', 'deleted_at', 'updated_at'], 'timestamp with time zone'), $types);
-        $this->assertSame('NO', $createdByType->is_nullable);
-        $this->assertNull($createdByType->column_default);
-    }
+    $this->assertTrue($experience->participants()->whereKey($participant)->exists());
+    $this->assertTrue($participant->experience()->is($experience));
+    $this->assertSame('7', $participant->public_id[14]);
+});
 
-    public function test_participant_public_id_remains_unique_after_soft_deletion(): void
-    {
-        $experience = Experience::query()->create($this->experienceAttributes());
-        $participant = Participant::query()->create($this->participantAttributes($experience->id));
-        $participant->delete();
+test('participant lifecycle columns use postgresql timestamptz without a creator default', function (): void {
+    $types = DB::table('information_schema.columns')
+        ->where('table_schema', 'public')
+        ->where('table_name', 'participants')
+        ->whereIn('column_name', ['created_at', 'updated_at', 'deleted_at'])
+        ->pluck('data_type', 'column_name')
+        ->all();
+    $createdByType = DB::table('information_schema.columns')
+        ->where('table_schema', 'public')->where('table_name', 'participants')
+        ->where('column_name', 'created_by_type')->first();
 
-        $this->expectException(QueryException::class);
+    $this->assertSame(array_fill_keys(['created_at', 'deleted_at', 'updated_at'], 'timestamp with time zone'), $types);
+    $this->assertSame('NO', $createdByType->is_nullable);
+    $this->assertNull($createdByType->column_default);
+});
 
-        Participant::query()->create($this->participantAttributes($experience->id, ['public_id' => $participant->public_id]));
-    }
+test('participant public id remains unique after soft deletion', function () use ($experienceAttributes, $participantAttributes): void {
+    $experience = Experience::query()->create($experienceAttributes());
+    $participant = Participant::query()->create($participantAttributes($experience->id));
+    $participant->delete();
 
-    public function test_participant_soft_deletion_hides_the_record_from_ordinary_queries(): void
-    {
-        $experience = Experience::query()->create($this->experienceAttributes());
-        $participant = Participant::query()->create($this->participantAttributes($experience->id));
-        $participant->delete();
+    $this->expectException(QueryException::class);
 
-        $this->assertNull(Participant::query()->find($participant->id));
-        $this->assertSame($participant->id, Participant::withTrashed()->findOrFail($participant->id)->id);
-    }
+    Participant::query()->create($participantAttributes($experience->id, ['public_id' => $participant->public_id]));
+});
 
-    public function test_participant_foreign_key_is_indexed_and_restricts_parent_deletion(): void
-    {
-        $experience = Experience::query()->create($this->experienceAttributes());
-        Participant::query()->create($this->participantAttributes($experience->id));
+test('participant soft deletion hides the record from ordinary queries', function () use ($experienceAttributes, $participantAttributes): void {
+    $experience = Experience::query()->create($experienceAttributes());
+    $participant = Participant::query()->create($participantAttributes($experience->id));
+    $participant->delete();
 
-        $index = DB::table('pg_indexes')
-            ->where('schemaname', 'public')
-            ->where('tablename', 'participants')
-            ->where('indexdef', 'like', '%(experience_id)%')
-            ->exists();
+    $this->assertNull(Participant::query()->find($participant->id));
+    $this->assertSame($participant->id, Participant::withTrashed()->findOrFail($participant->id)->id);
+});
 
-        $this->assertTrue($index);
-        $this->expectException(QueryException::class);
+test('participant foreign key is indexed and restricts parent deletion', function () use ($experienceAttributes, $participantAttributes): void {
+    $experience = Experience::query()->create($experienceAttributes());
+    Participant::query()->create($participantAttributes($experience->id));
 
-        DB::table('experiences')->where('id', $experience->id)->delete();
-    }
+    $index = DB::table('pg_indexes')
+        ->where('schemaname', 'public')
+        ->where('tablename', 'participants')
+        ->where('indexdef', 'like', '%(experience_id)%')
+        ->exists();
 
-    public function test_participant_foreign_key_restricts_parent_key_updates(): void
-    {
-        $experience = Experience::query()->create($this->experienceAttributes());
-        Participant::query()->create($this->participantAttributes($experience->id));
+    $this->assertTrue($index);
+    $this->expectException(QueryException::class);
 
-        $this->expectException(QueryException::class);
+    DB::table('experiences')->where('id', $experience->id)->delete();
+});
 
-        DB::table('experiences')->where('id', $experience->id)->update(['id' => $experience->id + 100]);
-    }
+test('participant foreign key restricts parent key updates', function () use ($experienceAttributes, $participantAttributes): void {
+    $experience = Experience::query()->create($experienceAttributes());
+    Participant::query()->create($participantAttributes($experience->id));
 
-    /** @return array<string, mixed> */
-    private function experienceAttributes(): array
-    {
-        return [
-            'title' => 'Market morning',
-            'locality' => 'Madrid',
-            'category' => 'Food',
-            'audience' => 'Everyone',
-            'editorial_status' => 'published',
-            'starts_at' => now()->subHour(),
-            'ends_at' => now()->addHour(),
-            'timezone' => 'Europe/Madrid',
-            'created_by_type' => 'system',
-        ];
-    }
+    $this->expectException(QueryException::class);
 
-    /** @return array<string, mixed> */
-    private function participantAttributes(int $experienceId, array $overrides = []): array
-    {
-        return [...[
-            'experience_id' => $experienceId,
-            'name' => 'Market stand',
-            'created_by_type' => 'system',
-        ], ...$overrides];
-    }
-}
+    DB::table('experiences')->where('id', $experience->id)->update(['id' => $experience->id + 100]);
+});
