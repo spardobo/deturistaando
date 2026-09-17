@@ -17,11 +17,11 @@ class ParticipantFactory extends Factory
             'experience_id' => Experience::factory(),
             'name' => 'Market stand',
             'created_by_type' => 'system',
-            'created_by_public_id' => null,
+            'created_by_id' => null,
             'updated_by_type' => null,
-            'updated_by_public_id' => null,
+            'updated_by_id' => null,
             'deleted_by_type' => null,
-            'deleted_by_public_id' => null,
+            'deleted_by_id' => null,
         ];
     }
 }
