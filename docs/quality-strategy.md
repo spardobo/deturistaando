@@ -21,7 +21,7 @@ This document defines the evidence required to release the [MVP01 requirements](
 | Architecture | Conventional Laravel responsibilities, Action boundaries, transaction ownership, and documented abstraction justifications. | Focused review and behavior tests during development and CI. |
 | Integration | PostgreSQL constraints, transactions, OAuth linking, queues, storage, and project-owned Integration behavior. | CI with real PostgreSQL, Laravel fakes, and focused Integration behavior tests. |
 | Contract | Project-owned Google Wallet Integration mapping and error classification. | Focused mapping/error tests; selected provider sandbox checks before release. |
-| Browser | Critical visitor, organizer, and business journeys. | Deferred; pull request and staging after complete owned journeys exist. |
+| Browser | Critical visitor, organizer, and business journeys. | Deferred; pre-push, CI, and staging with the first complete executable journey and its required runtime and fixtures. |
 | Operational | Backup restore, deployment, health, and rollback. | Before production release and after material infrastructure change. |
 
 Use the test pyramid as a planning guide:
@@ -90,18 +90,18 @@ All executable local quality checks run in containers. The host requires Docker,
 
 | Gate | Budget | Checks |
 |---|---:|---|
-| Pre-commit | Target `≤ 90 s` | Pint, Larastan, the Unit suite, scoped Vite+ checks, documentation links, and requirement identifiers. |
-| Pre-push | Target `≤ 3 min` | The complete pre-commit gate, dependency audit, Git-history secret scan, frontend production build, and the Feature suite. Together, the nested gates execute all current PHP tests without repeating Pint, Larastan, or Unit tests. |
+| Pre-commit | Target `≤ 90 s` | Fast deterministic feedback: configuration clear, Pint, Larastan, the PHPUnit Unit suite, scoped Vite+ checks, documentation-validator tests, documentation links, and requirement identifiers. Future tests in the Unit suite are included by the existing suite command. |
+| Pre-push | Target `≤ 3 min` | Pre-commit once, then the full PHP suite across `tests/` and colocated `resources/views/**/*.test.php`, complete Node tooling tests, dependency audit, Git-history secret scan, and frontend production build. |
 
 If a gate exceeds its budget consistently, move expensive checks to CI instead of encouraging bypass.
 
 Husky versions both hooks in `.husky/`. The hooks are minimal adapters: they delegate to `scripts/quality/gates/pre-commit.sh` and `scripts/quality/gates/pre-push.sh`, which expose every stage command instead of hiding the flow behind a generic quality alias. Repository scripts are grouped by responsibility under `gates/`, `documentation/`, `security/`, and `browser/`. They execute application commands in Sail and scanners or browsers in pinned containers. They fail closed when a check fails and remain convenience gates rather than merge authority. Keep Sail running before committing or pushing. `--no-verify` is reserved for recovery from a broken or unavailable local mechanism, never for ignoring a failing check; pull-request CI remains the merge authority.
 
-Command names follow `<operation>:<scope>:<variant>`. `format` changes files, `check:*` inspects without changing files, and `test:*` executes a named test suite. Composer and npm share this grammar but expose only capabilities that exist in their ecosystems; symmetry never justifies a placeholder command. Composer exposes `format`, `check:format`, `check:lint`, `test`, `test:unit`, and `test:feature`. PHPStan remains a static analyzer even though `check:lint` is its stable command name. npm exposes independent `check:format` and `check:lint` commands through Vite+ rather than hiding them behind an aggregate. `npm test` discovers every current Node test, while focused commands such as `test:documentation-validator` remain available for diagnosis and stage-specific gates.
+Command names follow `<operation>:<scope>:<variant>`. `format` changes files, `check:*` inspects without changing files, and `test:*` executes a named test suite. Composer and npm share this grammar but expose only capabilities that exist in their ecosystems; symmetry never justifies a placeholder command. Composer exposes `format`, `check:format`, `check:lint`, `test`, `test:unit`, and `test:feature`. Canonical `composer test` is full PHP completion evidence at pre-push and CI; focused `test:unit` and `test:feature` commands provide developer feedback only. PHPStan remains a static analyzer even though `check:lint` is its stable command name. npm exposes independent `check:format` and `check:lint` commands through Vite+ rather than hiding them behind an aggregate. `npm test` discovers every current Node test and runs at pre-push and CI, while focused commands such as `test:documentation-validator` remain available for diagnosis and pre-commit.
 
 `npm run test:documentation-validator` proves that the repository-owned validator detects broken Markdown links and invalid or unknown `REQ-*` identifiers. The pre-commit gate runs this test before `npm run check:documentation` applies the validated tool to `README.md` and `docs/`. The application and its validation tool therefore provide separate evidence.
 
-Playwright `1.63.0` is fixed in the npm lockfile and its wrapper fixes the matching Noble browser image by digest. `check:playwright-runtime` proves that Chromium launches without pretending to cover a product journey; `tests/Browser/` intentionally contains no product specifications until a complete owned journey exists. Coverage and critical Chromium tests join the required gates only after owned domain rules and browser journeys exist.
+Playwright `1.63.0` is fixed in the npm lockfile and its wrapper fixes the matching Noble browser image by digest. `check:playwright-runtime` proves that Chromium launches without pretending to cover a product journey; `tests/Browser/` intentionally contains no product specifications. Playwright joins pre-push and CI with the first complete executable browser journey and its required runtime and fixtures. Coverage joins those gates only when a driver, reporting, and criteria exist.
 
 Run the security and browser tooling without installing it on the host:
 
@@ -126,9 +126,9 @@ Recommended local tools:
 
 ## Continuous integration
 
-The current GitHub Actions baseline runs on pull requests targeting `main` and on pushes to `main`. One required `quality` job uses a disposable `ubuntu-latest` runner with PHP 8.4, Composer 2, Node.js 24, and an ephemeral PostgreSQL 16 Alpine service. It executes PHP, Composer, and Node directly on the runner rather than starting Sail, while reproducing the deterministic guarantees of pre-push: lockfile installation, configuration reset, PHP and JavaScript format and lint checks, Node tooling tests, documentation validation, dependency audits, reachable-history secret scanning, frontend build, and the complete PHP suite.
+The current GitHub Actions baseline runs on pull requests targeting `main` and on pushes to `main`. One required `quality` job uses a disposable `ubuntu-latest` runner with PHP 8.4, Composer 2, Node.js 24, and an ephemeral PostgreSQL 16 Alpine service. It executes PHP, Composer, and Node directly on the runner rather than starting Sail, independently repeating the exhaustive baseline: lockfile installation, configuration reset, PHP and JavaScript format and lint checks, complete Node tooling tests, documentation validation, dependency audits, reachable-history secret scanning, frontend build, and canonical `composer test` across `tests/` and colocated `resources/views/**/*.test.php`.
 
-Sail is a local-development contract, not a CI runtime requirement. GitHub Actions uses containers selectively where they provide justified isolation: PostgreSQL supplies the ephemeral service database and Gitleaks supplies the pinned scanner. Playwright will use its pinned browser container only after complete product journeys enter CI.
+Sail is a local-development contract, not a CI runtime requirement. GitHub Actions uses containers selectively where they provide justified isolation: PostgreSQL supplies the ephemeral service database and Gitleaks supplies the pinned scanner. Playwright joins CI only with the first complete executable browser journey and its required runtime and fixtures.
 
 GitHub Actions are fixed by commit SHA and container images by digest. Checkout fetches complete history for Gitleaks. The npm cache stores package-manager downloads through `actions/setup-node`; the Composer cache stores only downloaded archives through `actions/cache`, with a key derived from `composer.lock`. Neither cache stores `node_modules/` or `vendor/`, and both dependency trees are recreated from their committed lockfiles on every run.
 
@@ -150,9 +150,9 @@ The complete target gate remains:
 8. Production-image build from the root `Dockerfile`, plus a vulnerability scan when deployment files change.
 9. Documentation link and identifier checks.
 
-Critical Playwright coverage, stable visual snapshots, architecture tests, container scanning, and the GitHub Actions production-image build remain deferred until their dedicated items provide the required automation. The independent production `Dockerfile` is available for local build and smoke evidence, but it is not yet a repository gate. Do not present target gates as current evidence.
+Critical Playwright coverage and stable visual snapshots remain deferred until the first complete executable journey has its required runtime and fixtures; architecture tests, container scanning, and the GitHub Actions production-image build remain deferred until their dedicated items provide the required automation. The independent production `Dockerfile` is available for local build and smoke evidence, but it is not yet a repository gate. Do not present target gates as current evidence.
 
-Coverage measurement is also deferred until owned domain behavior exists. Its first implementation must exclude generated and infrastructure-only code, report the Core and Important tiers separately where tooling permits, and preserve the `100/80/0` risk interpretation rather than impose one repository-wide percentage.
+Coverage measurement is deferred until a driver, reporting, and criteria exist. Its first implementation must exclude generated and infrastructure-only code, report the Core and Important tiers separately where tooling permits, and preserve the `100/80/0` risk interpretation rather than impose one repository-wide percentage; only then does coverage join pre-push and CI.
 
 Keep the current deterministic baseline in one required job so branch protection has one clear result and this small project avoids duplicated setup. Split independent jobs only if measured duration exceeds the feedback budget. A dedicated future delivery item must build and verify the independent production image without starting Sail. Build the deployable image once and promote the same artifact.
 

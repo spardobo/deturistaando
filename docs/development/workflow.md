@@ -172,7 +172,7 @@ Run the current security gates and verify the browser harness with:
 ./scripts/quality/browser/run-playwright.sh check:playwright-runtime
 ```
 
-The dependency gate blocks all Composer advisories and abandoned locked packages, plus npm findings at `high` or `critical` severity. The Playwright harness is available but is not part of pre-push until `tests/Browser/` contains a complete owned journey.
+The dependency gate blocks all Composer advisories and abandoned locked packages, plus npm findings at `high` or `critical` severity. The Playwright harness is available but does not join pre-push or CI until the first complete executable browser journey has its required runtime and fixtures.
 
 Build and smoke-test the production image independently:
 
@@ -211,11 +211,11 @@ Dependabot maintenance is the only operational exception to issue linkage: a pul
 
 Local quality gates increase in cost without replacing CI:
 
-1. During development, run the smallest focused test that proves the behavior being changed.
-2. `.husky/pre-commit` delegates to `scripts/quality/gates/pre-commit.sh`. The gate clears cached Laravel configuration, runs `composer check:format`, `composer check:lint`, and `composer test:unit`, then runs the independent Vite+ `npm run check:format` and `npm run check:lint` commands, tests the documentation validator, and applies it to the repository. PHPStan remains the PHP static analyzer behind the stable `check:lint` command. Its target budget is 90 seconds.
-3. `.husky/pre-push` delegates to `scripts/quality/gates/pre-push.sh`. The gate repeats pre-commit, audits locked dependencies, scans reachable Git history for secrets, creates the frontend production build, and runs `composer test:feature`. The composed gates therefore cover all current PHP tests without repeating Pint, Larastan, or Unit tests. Its target budget is three minutes.
-4. Pull-request CI repeats the deterministic pre-push baseline with direct runner commands in one required job and a disposable PostgreSQL 16 service. It also runs the complete Node test command and documentation validator rather than only the focused local pre-commit test.
-5. Coverage and critical Chromium browser tests enter pre-push and CI only after owned domain rules and complete browser journeys exist.
+1. During development, run the smallest focused test that proves the behavior being changed. Focused developer commands are not completion evidence.
+2. `.husky/pre-commit` delegates to `scripts/quality/gates/pre-commit.sh` for fast, deterministic feedback: cached Laravel configuration is cleared; `composer check:format`, `composer check:lint`, and `composer test:unit` run; then Vite+ `npm run check:format`, `npm run check:lint`, `npm run test:documentation-validator`, and `npm run check:documentation` run. Future PHPUnit tests in the Unit suite are included by that existing suite command. PHPStan remains the PHP static analyzer behind `check:lint`. Its target budget is 90 seconds.
+3. `.husky/pre-push` delegates once to pre-commit, then runs canonical unfiltered `composer test` across `tests/` and colocated `resources/views/**/*.test.php`, complete `npm test`, the dependency-audit and Git-history secret-scan wrappers, and the production build. It does not run Playwright. Its target budget is three minutes.
+4. Pull-request CI independently repeats the exhaustive baseline with direct runner commands in one required job and a disposable PostgreSQL 16 service, including the full PHP suite and complete Node tooling tests.
+5. Coverage joins pre-push and CI only when a driver, reporting, and criteria exist. Playwright joins them with the first complete executable browser journey and its required runtime and fixtures.
 
 Composer and npm expose atomic capabilities with operation-first names: `format` changes files, `check:*` inspects without changing files, and `test:*` runs a named suite. They share a grammar, not an artificial one-to-one catalog: each ecosystem exposes only capabilities backed by a real tool or suite. Gate scripts own stage composition; Husky only decides when to invoke them. `npm test` runs every current Node test, `npm run check:documentation` applies the repository validator, and `npm run test:documentation-validator` proves that the validator itself recognizes controlled failures.
 
@@ -252,7 +252,7 @@ The delivery target is:
 6. The release verifies health, queue state, migration, and the main experience flow.
 7. A failed verification triggers rollback or the documented recovery path.
 
-The Playwright container harness now exists. Product browser journeys and their CI gate remain deferred until complete owned flows exist. The production image is also available, while its GitHub Actions build and verification remain part of the dedicated CI delivery item.
+The Playwright container harness now exists. Product browser journeys join pre-push and CI only with the first complete executable journey and its required runtime and fixtures. The production image is also available, while its GitHub Actions build and verification remain part of the dedicated CI delivery item.
 
 This CI boundary is recorded in [ADR-006](../architecture/decisions/006-lightweight-ci-runtime.md). Direct execution on an ephemeral runner preserves independent evidence without extending the local Sail requirement into hosted automation.
 
