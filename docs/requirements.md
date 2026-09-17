@@ -116,7 +116,7 @@ Nine explicit MVP01 exclusions appear at the end of this document. They are scop
 | MA | [Market analysis](market-analysis.md). |
 | CD | [Conceptual design](conceptual-design.md). |
 | UX | [UI/UX guidelines](ui-ux-guidelines.md). |
-| WS | Product and architecture workshop that approved the MVP01 constraints. |
+| PD | Agreed project decision recorded in the requirement itself; its description, User Story, and acceptance criteria state the constraint and rationale. |
 
 ### Requirement entry structure
 
@@ -1368,7 +1368,7 @@ Wave 0 installs Socialite and establishes the Google provider configuration cont
 
 #### REQ-SEC-003 — Protect secrets and private credentials
 
-**Priority:** Must | **Type:** Security | **Module:** Security | **Source:** WS
+**Priority:** Must | **Type:** Security | **Module:** Security | **Source:** PD
 
 **Description:** Secrets, tokens, private codes, and PINs must not appear in source control, avoidable URLs, logs, or recoverable storage when hashing applies.
 
@@ -1422,7 +1422,7 @@ Wave 0 installs Socialite and establishes the Google provider configuration cont
 
 #### REQ-SEC-005 — Detect delivery security failures
 
-**Priority:** Must | **Type:** Security | **Module:** Security | **Source:** WS
+**Priority:** Must | **Type:** Security | **Module:** Security | **Source:** PD
 
 **Description:** Delivery must detect leaked secrets, vulnerable dependencies, unsafe production configuration, and access-control regressions.
 
@@ -1622,7 +1622,7 @@ Wave 0 installs Socialite and establishes the Google provider configuration cont
 
 #### REQ-REL-002 — Back up and restore production data
 
-**Priority:** Must | **Type:** Reliability | **Module:** Reliability | **Source:** WS
+**Priority:** Must | **Type:** Reliability | **Module:** Reliability | **Source:** PD
 
 **Description:** Production must have automated daily database backups and a verified restore procedure with initial RPO `24 h` and RTO `8 h`.
 
@@ -1672,7 +1672,7 @@ Wave 0 installs Socialite and establishes the Google provider configuration cont
 
 #### REQ-MNT-002 — Keep business rules clear and testable
 
-**Priority:** Must | **Type:** Maintainability | **Module:** Architecture | **Source:** RD, WS
+**Priority:** Must | **Type:** Maintainability | **Module:** Architecture | **Source:** RD, PD
 
 **Description:** Consequential business rules must remain cohesive, explicit, and testable with Laravel-native dependencies permitted.
 
@@ -1696,7 +1696,7 @@ Wave 0 installs Socialite and establishes the Google provider configuration cont
 
 #### REQ-MNT-003 — Isolate external-provider implementation
 
-**Priority:** Must | **Type:** Maintainability | **Module:** Architecture | **Source:** RD, WS
+**Priority:** Must | **Type:** Maintainability | **Module:** Architecture | **Source:** RD, PD
 
 **Description:** Provider SDK behavior must stay in project-owned Integrations.
 
@@ -1744,7 +1744,7 @@ Wave 0 installs Socialite and establishes the Google provider configuration cont
 
 #### REQ-OBS-001 — Emit actionable operational evidence
 
-**Priority:** Must | **Type:** Observability | **Module:** Observability | **Source:** WS
+**Priority:** Must | **Type:** Observability | **Module:** Observability | **Source:** PD
 
 **Description:** Production must emit health state, structured errors, correlation context, and audit events without credentials or unnecessary visitor data.
 
@@ -1770,7 +1770,7 @@ Wave 0 installs Socialite and establishes the Google provider configuration cont
 
 #### REQ-TEC-001 — Use PHP and Laravel
 
-**Priority:** Must | **Type:** Technical constraint | **Module:** Technology | **Source:** WS
+**Priority:** Must | **Type:** Technical constraint | **Module:** Technology | **Source:** PD
 
 **Description:** The application must use PHP 8.4 and Laravel 13.
 
@@ -1794,7 +1794,7 @@ Wave 0 installs Socialite and establishes the Google provider configuration cont
 
 #### REQ-TEC-002 — Use the Livewire starter kit
 
-**Priority:** Must | **Type:** Technical constraint | **Module:** Technology | **Source:** WS
+**Priority:** Must | **Type:** Technical constraint | **Module:** Technology | **Source:** PD
 
 **Description:** The project must start from the official Laravel Livewire starter kit with Fortify.
 
@@ -1874,7 +1874,7 @@ Wave 0 installs Socialite and establishes the Google provider configuration cont
 
 #### REQ-TEC-005 — Use PostgreSQL
 
-**Priority:** Must | **Type:** Technical constraint | **Module:** Technology | **Source:** WS
+**Priority:** Must | **Type:** Technical constraint | **Module:** Technology | **Source:** PD
 
 **Description:** PostgreSQL 16 must be the authoritative data store.
 
@@ -1898,7 +1898,7 @@ Wave 0 installs Socialite and establishes the Google provider configuration cont
 
 #### REQ-TEC-006 — Use the approved map stack
 
-**Priority:** Must | **Type:** Technical constraint | **Module:** Technology | **Source:** WS
+**Priority:** Must | **Type:** Technical constraint | **Module:** Technology | **Source:** PD
 
 **Description:** Maps must use Leaflet with OpenStreetMap-compatible data and an approved tile service.
 
@@ -1922,7 +1922,7 @@ Wave 0 installs Socialite and establishes the Google provider configuration cont
 
 #### REQ-TEC-007 — Use the approved development and delivery tools
 
-**Priority:** Must | **Type:** Technical constraint | **Module:** Technology | **Source:** WS
+**Priority:** Must | **Type:** Technical constraint | **Module:** Technology | **Source:** PD
 
 **Description:** Local development must use Laravel Sail with the application, PostgreSQL, mail, and local dependencies in containers. Local PHP, Composer, Node, test, and quality commands must run through Sail. GitHub Actions must execute PHP, Composer, and Node directly on an ephemeral runner, using containers only for services or tools that justify their isolation. Production must use an independent root `Dockerfile`; its automated build and verification remain a separate delivery obligation.
 

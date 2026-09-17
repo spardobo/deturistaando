@@ -27,21 +27,6 @@ Use conventional Laravel and PostgreSQL features. Model only current domain need
 | Access | Use Eloquent first. Use the query builder when a database-specific or aggregate query is clearer. |
 | Seeds | Use factories for tests. Use seeders for opt-in local demos. Never create demo rows automatically in production. |
 
-## Structural baseline
-
-The project inspected SINAVE DDL as read-only structural evidence. The inspected source had four application schemas and 287 tables. It used lower-snake-case plural tables, conventional `id` and `foo_id` columns, named foreign keys, indexes, and unique constraints. Its dominant traceability columns were `status`, `register_date`, `register_user_id`, `last_update_date`, `last_update_user_id`, and `last_access_control_id`.
-
-The source also had 34 `_hist` snapshot tables with I/U/D markers, an `access_control` audit table, broad native enums, cross-schema foreign keys, no explicit foreign-key actions, one MyISAM legacy table without a primary key, and mixed collations. This evidence informs naming and traceability decisions only. It contains no project data or credentials. A temporary inspected dump is not versioned project evidence.
-
-| SINAVE pattern | Project decision | Reason |
-|---|---|---|
-| Lower-snake-case plural tables and conventional identifiers | Adopt | Fits Laravel and clear relational naming. |
-| Named constraints and indexes | Adapt | Use Laravel conventional names. Specify a shorter explicit name only when PostgreSQL naming limits require it. |
-| Universal lifecycle preservation | Adapt deliberately | Use the uniform timestamp and soft-delete baseline for every new project-owned application table. |
-| Universal actor/access-control columns and snapshot history | Adapt actor metadata; defer snapshot history | Every new project-owned table records its latest creator, updater, and deleter through the uniform actor baseline. `_hist` tables, triggers, and generic history remain out of scope. |
-| Broad native enums | Reject as defaults | They constrain domain evolution without a current domain need. |
-| Cross-schema coupling, implicit foreign-key actions, missing primary keys, legacy engine traits, and mixed collations | Reject | They conflict with one authoritative PostgreSQL application schema and explicit integrity. |
-
 ## Naming and identifiers
 
 | Element | Required rule |
@@ -61,55 +46,44 @@ The source also had 34 `_hist` snapshot tables with I/U/D markers, an `access_co
 | Required value | Use `NOT NULL`. |
 | Unique business value | Explicitly choose all-row or non-deleted-row uniqueness based on domain semantics. Use `UNIQUE` for all-row uniqueness. |
 | Valid range or relationship inside a row | Use `CHECK`. |
-| Referenced record | Use a foreign key. |
+| Referenced record | Use a foreign key, except for the historical polymorphic actor references below. |
 | Missing or implied value | Declare nullability and defaults explicitly. Do not use sentinel values. |
-| Absolute moment | Use a timezone-aware timestamp. The mandatory table baseline supplies `created_at`, `updated_at`, and `deleted_at`. |
+| Absolute moment | Use a timezone-aware timestamp. Mutable domain entities use the common lifecycle timestamps below. |
 | Calendar-only value | Use `date`. |
 | Money | Store minor units in an appropriate `integer`, `bigint`, or `numeric` column. Do not use floating point. |
 | Variable metadata or provider payload boundary | Use `jsonb` only when allowlisted and variable by design. |
-| Stable state values | Use a PHP backed enum when it improves application clarity. Do not use PostgreSQL or MySQL native enums by default. |
+| Business lifecycle | Use canonical `status`, a PHP backed enum, and a database `CHECK` for allowed values. Do not use native database enums by default. |
 
 Database constraints enforce database invariants. Application validation improves feedback but does not replace a constraint.
 
 ## Uniform table baseline
 
-**Scope: every new project-owned application table**, including entities, catalogs, pivots, immutable facts, audit tables, and technical project-owned tables. This is a prospective governance baseline; existing Laravel, framework, and vendor tables remain exempt unless project code materially replaces their schema.
+**Scope: project-owned mutable domain entities**, including `experiences` and `participants`. Use common timestamps and last-actor metadata rather than custom per-table variants. Immutable facts and audit rows are append-only in ordinary operation; they do not inherit a blanket update/delete metadata requirement. Framework, Starter Kit, `users`, and vendor schemas and account behavior are exempt and unchanged; ordinary User hard deletion remains supported.
 
-Every table carries all of these columns:
+Mutable domain entities must carry these columns:
 
-- `created_at`, `created_by_type`, `created_by_public_id`
-- `updated_at`, `updated_by_type`, `updated_by_public_id`
-- `deleted_at`, `deleted_by_type`, `deleted_by_public_id`
+- `created_at`, `created_by_type`, `created_by_id`
+- `updated_at`, `updated_by_type`, `updated_by_id`
+- `deleted_at`, `deleted_by_type`, `deleted_by_id`
 
-Use Laravel's timezone-aware migration methods for the timestamp lifecycle: `timestampsTz()` supplies `created_at` and `updated_at`; `softDeletesTz()` supplies `deleted_at`. Actor public-ID columns use PostgreSQL `uuid`, not sequential internal IDs.
+Use `timestampsTz()` for `created_at` and `updated_at`, and `softDeletesTz()` for `deleted_at`. Actor types are strings; actor IDs are nullable `VARCHAR` holding native scalar identifiers as text, not public resource identities.
 
-```php
-$table->timestampsTz();
-$table->string('created_by_type');
-$table->uuid('created_by_public_id')->nullable();
-$table->string('updated_by_type')->nullable();
-$table->uuid('updated_by_public_id')->nullable();
-$table->softDeletesTz();
-$table->string('deleted_by_type')->nullable();
-$table->uuid('deleted_by_public_id')->nullable();
-```
+| Actor type | ID rule |
+|---|---|
+| `user` | Required canonical decimal text of the Starter Kit User `id`. |
+| `system` | `null`; the caller deliberately supplies system context, including seeders and migrations. |
 
-Actor metadata records only the latest row-level creator, updater, and deleter. It does not replace semantic `audit_events` history.
+Use these two actor types. Introduce non-user principals only for an actual requirement-defined use case, not invented identifiers, an actor registry, or resolver scaffolding.
 
-| Actor type | Example | Public ID rule |
-|---|---|---|
-| `organizer_user` | An identified organizer using the application | Required |
-| `business_access` | An identified business integration or delegated access principal | Required |
-| `anonymous_participation` | A participation flow identified by its stable public identity | Required |
-| `platform_operator` | An identified platform support or operations principal | Required |
-| `system` | A deliberate system process, including seeders and migrations | May be `null` |
-| `anonymous_visitor` | An unauthenticated visitor without a stable public identity | May be `null` |
+`created_by_type` is required for new rows. Updated/deleted actor pairs remain null until their event occurs. Polymorphic historical actor references have **no foreign key**: deleting a User must not cascade, restrict deletion, or erase attribution. Retained identifiers do not guarantee resolvable personal history after account deletion. Actor pairs are internal and must never enter public identity or API serialization; domain resource `public_id` rules remain separate.
 
-`created_by_type` is required for every new application-created row. The other actor fields are nullable until their lifecycle event occurs; `created_by_public_id` is also nullable for `system` and `anonymous_visitor`. Identified actor types require a public ID. Seeders and migrations set `created_by_type` to `system` with a `null` public ID. Do not use a database default or implementation fallback that silently assigns `system`: system context must be set deliberately.
+Actor type conversions must preserve existing identifier values and attribution without loss or silent reassignment to another principal. Rollback must reject identifiers incompatible with the destination type; provide a guarded migration and an explicit recovery procedure where reversal is unsafe.
 
-Immutable facts and audit rows carry the same columns for schema uniformity. Ordinary application code must not update or soft-delete them. A controlled retention process is their only deletion route.
+### Attribution ownership
 
-This standard adds no migration, helper macro, trigger, `_hist` table, `audit_events` table, actor-registry table, or other implementation scaffolding by itself.
+Owning write Actions must set attribution server-side, never from untrusted form mass assignment or a generic observer fallback. Missing actor context must not silently become `system`. Creation, update, and soft deletion record their applicable actor; restoration atomically clears `deleted_at` and both deleted-actor fields and sets the updated actor to the restorer.
+
+These fields retain the creator and latest updater/deleter, not a sequence of changes. Soft deletion preserves the latest row, not versions or exact past attributes. Semantic audit belongs to its sensitive command, not to generic row-change history.
 
 ## Relationships, deletion, and indexes
 
@@ -119,9 +93,9 @@ This standard adds no migration, helper macro, trigger, `_hist` table, `audit_ev
 | `CASCADE` | **Scope: declared hard-delete recovery paths only.** Use only for exclusive, disposable children or pivot rows. |
 | `SET NULL` | **Scope: optional retained evidence.** Use only for optional retained evidence. |
 | Immutable or audit history | **Scope: immutable facts and audit rows.** Never cascade delete it. |
-| Hard deletion | **Scope: ordinary application flows.** Forbid it. Permit it only through a documented retention/purge process or rollback/recovery procedure. |
+| Hard deletion | **Scope: project-owned mutable domain entities.** Use soft deletion for ordinary removal. Hard deletion requires documented retention/purge or rollback/recovery; exempt Starter Kit User account deletion remains unchanged. |
 | Operational query | **Scope: ordinary application reads.** Exclude soft-deleted rows by default. |
-| Analytics or administrative query | **Scope: authorized analytics and administration.** May include soft-deleted rows explicitly when historical records are required. |
+| Analytics or administrative query | **Scope: authorized historical reporting.** Include retained records according to event period and meaningful business facts, not only currently active or non-deleted parents. |
 | Unique business value | **Scope: every uniqueness rule.** State whether uniqueness covers all rows or only non-deleted rows. For active-row reuse, use a PostgreSQL partial unique index over non-deleted rows. |
 | Referencing-column index | **Scope: demonstrated joins or deletes.** Add one when needed. PostgreSQL does not create it automatically for a foreign key. |
 | Composite or partial index | **Scope: demonstrated constraint or access path.** Add only when needed. |
@@ -129,32 +103,25 @@ This standard adds no migration, helper macro, trigger, `_hist` table, `audit_ev
 
 Referential actions encode record ownership and retention. Choose them from the domain lifecycle, not from migration convenience.
 
+Public child reads must respect parent visibility. Soft-deleting a parent does not soft-delete its children; restoring it does not revive independently deleted children. Historical reportability is distinct from public visibility and does not provide exact past attribute reconstruction. Reporting implementation belongs to its owning feature.
+
 ## Lifecycle, audit, and commands
 
-- **Scope: project-owned domain tables that represent a lifecycle.** Require a `status` value meaningful to that domain. Do not impose generic A/I values where they lose meaning.
-- **Scope: pure facts, audit rows, and technical rows.** Do not add meaningless `status` values.
-- **Scope: all project-owned application tables.** Carry the uniform actor metadata baseline: `created_by_type` and `created_by_public_id`, `updated_by_type` and `updated_by_public_id`, and `deleted_by_type` and `deleted_by_public_id`. Do not add legacy `last_access_control` columns.
-- **Scope: immutable domain behavior.** When visits or redemptions are implemented, model them as immutable facts.
-- **Scope: the first sensitive command that owns semantic audit.** Introduce one `audit_events` table only then. The owning application Action writes it transactionally. It follows the uniform timestamp and soft-delete baseline, remains append-only in ordinary operation, and is deletable only by controlled retention.
+- **Scope: domain entities with an actual business lifecycle.** Use `status` with a PHP backed enum and database `CHECK`. Experience values are `draft`, `published`, and `cancelled`; schedule-derived `upcoming`, `active`, and `finished` are not stored status values.
+- **Scope: entities without a lifecycle, pure facts, audit rows, and technical rows.** Do not invent meaningless active/inactive states. No separate business status is defined for Participant; `deleted_at` represents logical removal.
+- **Scope: project-owned mutable domain entities.** Carry the common timestamp and actor baseline above.
+- **Scope: immutable domain behavior.** Model visits and redemptions as immutable facts.
+- **Scope: the first sensitive command that owns semantic audit.** Introduce `audit_events` only when a sensitive command requires it. The owning Action writes it transactionally. Facts and audit events remain append-only in ordinary operation: preserve events and define explicit invalidation/correction semantics in the owning feature.
 - **Scope: all work before a sensitive command owns it.** Do not add generic row-change triggers, `_hist` tables, or audit/history scaffolding.
 - **Scope: audit event payloads.** Allowlist and sanitize them. Record the applicable when, where, who, and what. Exclude or protect tokens, passwords, connection strings, keys, and sensitive PII.
 - **Scope: consequential database commands.** One Action owns each transaction. Run external effects after commit.
 - **Scope: sensitive commands.** Use durable scoped idempotency and locking or uniqueness as their risk requires.
 
-The retention period, organizer deletion behavior, audit enforcement and retention, and exact idempotency receipts are explicit human decisions. Decide each before its affected tables ship.
+Controlled retention/purge is separate from ordinary deletion and event correction. Retention periods, domain organizer deletion behavior, audit enforcement, and exact idempotency receipts remain explicit human decisions to resolve before affected production data ships. Preservation is not permission for indefinite PII retention.
 
-## Wave 2 application boundary
+## Publication and temporal state
 
-Wave 2 uses PostgreSQL as the authoritative source and adds only minimal real persistence for `experiences` and `participants`.
-
-| Include | Exclude for now |
-|---|---|
-| Eloquent models, relationships, scopes, and read queries for experiences and participants | Organizer creation and publication scaffolding |
-| Editorial publication state | Audit/history/trigger scaffolding; Wave 2 has no sensitive user mutation yet |
-| Date-derived `upcoming`, `active`, and `finished` reads | Premature retention or idempotency receipt tables |
-| `timestampsTz()`, `softDeletesTz()`, and the uniform actor metadata baseline for experiences and participants | Snapshot history and generic trigger scaffolding |
-
-Editorial publication is separate from date-derived `upcoming`, `active`, and `finished` status. A date must not silently publish or unpublish an experience.
+Business publication `status` is separate from date-derived `upcoming`, `active`, and `finished` phases. A date must not silently publish or unpublish an experience. Add write Actions, audit, retention, and idempotency persistence only when an owning feature requires them.
 
 ## Migration review checklist
 
@@ -162,12 +129,13 @@ Editorial publication is separate from date-derived `upcoming`, `active`, and `f
 - [ ] Tables, columns, foreign keys, and names follow the naming rules.
 - [ ] Internal and public identifiers have separate purposes.
 - [ ] Nullability, defaults, types, and database invariants are explicit.
-- [ ] Every new project-owned application table has `timestampsTz()`, `softDeletesTz()`, and the complete actor metadata baseline: `created_by_type`/`created_by_public_id`, `updated_by_type`/`updated_by_public_id`, and `deleted_by_type`/`deleted_by_public_id`.
-- [ ] Actor public IDs use PostgreSQL `uuid` stable public identities, not internal sequential IDs. `created_by_type` is required for application-created rows; `system` is set deliberately (never as a fallback) and uses a `null` public ID for seeders and migrations.
+- [ ] Mutable domain entities use common timezone-aware timestamps, soft deletion, and `created_by`, `updated_by`, and `deleted_by` type/ID pairs; immutable facts and exempt schemas are not forced into this baseline.
+- [ ] Internal actor IDs are nullable `VARCHAR`: new writes use canonical decimal User IDs or deliberate `system` with null ID, without foreign keys or public serialization.
+- [ ] Type conversions preserve existing attribution; rollback rejects incompatible identifiers and unsafe reversal has explicit recovery steps. Owning Actions control attribution and atomic restoration.
 - [ ] Every foreign key has explicit update and deletion behavior.
 - [ ] Each uniqueness rule declares all-row or non-deleted-row scope; active-row reuse uses a partial unique index.
-- [ ] Operational query scopes exclude soft-deleted rows by default; authorized analytics/administrative queries may include them explicitly when historical records are required.
-- [ ] Ordinary application flows contain no hard delete; each permitted hard delete has a documented retention/purge or rollback/recovery procedure.
+- [ ] Ordinary reads exclude soft-deleted rows and public children respect parent visibility; historical reports use event periods and business facts without promising past attribute reconstruction.
+- [ ] Ordinary domain removal uses soft deletion without cascading it to children; exempt User deletion is unchanged. Domain purge/recovery has an explicit procedure.
 - [ ] Each added index has a demonstrated constraint, join, delete, or read path.
 - [ ] Lifecycle, audit, transaction, provider, locking, and idempotency behavior matches the current work item.
 - [ ] The migration is reversible or has explicit recovery steps.
